@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.constants as const
+import argparse
 
 def mA_per_watt_to_QE(current_mA, wavelength_nm):
     # Constants
@@ -17,8 +18,12 @@ def mA_per_watt_to_QE(current_mA, wavelength_nm):
     return qe
 
 # Import the data
-file_path = 'C:/Users/lexda/Desktop/QE/QE_22240313.csv'
-data = pd.read_csv(file_path)
+parser = argparse.ArgumentParser(description='Generate a heatmap from a CSV file.')
+parser.add_argument('filename', type=str, help='Path to the CSV file')
+args = parser.parse_args()  # Parse the command-line arguments
+data = pd.read_csv(args.filename)  # Read the CSV file
+#file_path = 'C:/Users/lexda/Desktop/QE/QE_22240313.csv'
+#data = pd.read_csv(file_path)
 
 # Extracting data
 MeasuredDate = pd.to_datetime(data['MeasuredDate'])
@@ -53,15 +58,30 @@ plt.tight_layout()
 plt.show()
 
 # Plot QE vs. Wavelength for each date
-plt.figure(figsize=(10, 6))
+plt.figure(figsize=(6, 10))
 for date in qe_df.index:
-    plt.plot(wavelengths, qe_df.loc[date], label=date.strftime('%d-%b-%y'))
+    plt.semilogy(wavelengths, qe_df.loc[date], label=date.strftime('%d-%b-%y'))
+
+# Add text box with the maximum QE for each date
+props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+textstr = ''
+for date in qe_df.index:
+    max_qe = qe_df.loc[date].max()
+    textstr += f'{date.strftime("%d-%b-%y")}: {max_qe:.2f} %\n'
+
 
 plt.xlabel('Wavelength (nm)')
 plt.ylabel('Quantum Efficiency (%)')
 plt.title('Quantum Efficiency vs. Wavelength')
+#plt.text(0.05, 0.2, textstr, transform=plt.gca().transAxes, fontsize=14,
+#        verticalalignment='center', bbox=props)
+plt.text(0.80, 0.9, "Preliminary", transform=plt.gca().transAxes, fontsize=16,
+        verticalalignment='center', bbox=props)
 plt.legend()
-plt.yscale('log')
-plt.grid(True)
+#plt.yscale('log')
+
+
+#plt.minorticks_on()
+plt.grid(True, which='both', linestyle='--')
 plt.tight_layout()
 plt.show()
