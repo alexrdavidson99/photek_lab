@@ -1,7 +1,6 @@
 import pandas as pd
 from scipy.signal import find_peaks
 from itertools import cycle
-
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -42,7 +41,7 @@ cathode_gap = 0.5e-3 # between 0.2 mm and 0.5 mm calculated gap 0.295 mm
 q_m_hydrogen = 9.58e7
 
 Q_m = 9.58e7
-ions = [Q_m, Q_m / 5, Q_m / 8, Q_m / 10, Q_m / 12, Q_m / 18,  Q_m / 70]
+ions = [Q_m, Q_m / 5, Q_m / 8, Q_m / 10, Q_m / 12, Q_m / 18,  Q_m / 132]
 
 #divisors = list(range(1, 134))
 #ions = [Q_m / d for d in divisors]
@@ -57,8 +56,8 @@ ions_list = ['H+', 'He+','Li/Be+?', 'Li/Be+?', 'C+', 'H20+', 'Ga+']
 colors = cycle(['black', 'blue', 'green', 'orange', 'purple', 'brown', 'cyan'])
 
 # Plot each ion's time as a vertical line with a unique color
-for k, color in zip(range(len(times)), colors):
-    plt.vlines(times[k], 0, 5000, colors=color, linestyles='solid', label=f'{ions_list[k]}')
+#for k, color in zip(range(len(times)), colors):
+#    plt.vlines(times[k], 0, 5000, colors=color, linestyles='solid', label=f'{ions_list[k]}')
 
 data_t0 = pd.read_csv('C:/Users/lexda/Desktop/ion_feedback/F4--alex gas--00000.txt', comment='#', names=["1_to_10000", "events"], skiprows=1)
 events_t0 = data_t0['events']
@@ -71,6 +70,7 @@ data   = pd.read_csv('C:/Users/lexda/Desktop/ion_feedback/F3--alex gas--00000.tx
 events = data['events']
 print(len(events))
 hist_vals, bin_edges, _ =plt.hist((events-7.4e-9)*1e9, bins=300)
+plt.yscale('log')
 
 # Find peaks in the second histogram
 peaks, _ = find_peaks(hist_vals, height=400)  # You can adjust the height parameter as needed
@@ -82,7 +82,7 @@ peak_heights = hist_vals[peaks]
 # Plot peak positions and heights
 
 plt.xlim(-10, 80)
-plt.ylim(0, 2000)
+#plt.ylim(0, 2000)
 plt.xlabel('Time [ns]')
 plt.ylabel('Events')
 plt.title('Events vs. Time')
