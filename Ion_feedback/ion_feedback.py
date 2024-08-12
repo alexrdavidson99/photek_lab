@@ -54,8 +54,9 @@ def calculate_time(anode_gap, cathode_gap, mcp_gap, q_m,m):
     print (F"energy in mcp {energy} ev")
 
     time_to_cathode = np.sqrt((2 * cathode_gap) / cathode_acc)
+    print (F"mcp to cathode {time_to_cathode*1e9} ns")
     time_to_mcp = np.sqrt((2 * cathode_gap) / e_cathode_acc)
-    print (F"cathode to mcp {time_to_mcp}")
+    print (F"cathode to mcp {time_to_mcp*1e9} ns")
     time_to_anode = np.sqrt((2 * anode_gap) / anode_acc) # electron time to anode (s)
     print (F"mcp to anode {time_to_anode}")
     time = time_to_cathode  + time_to_mcp   + 0.4e-9  + time_to_anode    # Time (seconds)
@@ -64,10 +65,12 @@ def calculate_time(anode_gap, cathode_gap, mcp_gap, q_m,m):
 
 def read_data(filename):
     data = pd.read_csv(filename, comment='#', names=["1_to_10000", "events"], skiprows=6, dtype={"1_to_10000": int, "events": float})
-    return data['events']
+    print(f"number captured events..{len(data['events'])}")
+    return data['events'].reset_index(drop=True)
 def read_data_hist(filename):
     data = pd.read_csv(filename, comment='#', names=["time", "hits"], skiprows=1, dtype={"time": float, "hits": int})
     return data['time'], data['hits']
+
 
 def find_offset(data):
     hist_vals, bin_edges, _ = plt.hist(data, bins=50)
@@ -107,7 +110,7 @@ times, times_in_mcp = zip(*[(time * 1e9, time_in_mcp * 1e9) for time, time_in_mc
 plot_time = np.array(times/times[0])
 
 for index, time_ns in enumerate(times_in_mcp):
-    print(f"{index + 1}: {time_ns} ns")
+    print(f"mass {ion_mass_in_ev[index]/1e6:.1f} MeV/c^2: {time_ns} ns")
 
 ions_list = ['H+', 'He+','Li/Be+?', 'Li/Be+?', 'C+', 'H20+', 'Ga+']
 colors = cycle(['black', 'blue', 'green', 'orange', 'purple', 'brown', 'cyan'])
@@ -179,3 +182,48 @@ plt.xlabel('Time [ns]')
 plt.ylabel('Events')
 plt.title('Events vs. Time')
 plt.savefig('ion_feedback_F1.pdf', dpi=300)
+
+events_intital_data = read_data('./Ion_feedback_data/F4--alex gas--ion-10k-4.1kv--newdropper--00000.txt')
+peak_positions_t0_intial, peak_heights_t0_intial = find_offset(events_intital_data)
+
+plt.figure(figsize=(10, 6))
+inital_data_events = read_data('./Ion_feedback_data/F4--alex gas--ion-10k-4.1kv--newdropper--00000.txt')
+inital_data_events = read_data('./Ion_feedback_data/F4--alex gas--ion-10k-4kv--newdropper--00000.txt')
+plt.hist((inital_data_events-peak_positions_t0_intial)*1e9, bins=300, alpha=0.5, color='blue', label='Initial peak')
+#min_events = read_data('./Ion_feedback_data/F5--alex gas--ion-100k--with-min--00000.txt')
+events = read_data('./Ion_feedback_data/F3--alex gas--ion-10k-4kv--newdropper--00000.txt')
+plt.hist((events-peak_positions_t0_intial)*1e9, bins=650, alpha=0.5, color='red', label='Data_4kv')
+events = read_data('./Ion_feedback_data/F3--alex gas--ion-10k-4.1kv--newdropper--00000.txt')
+plt.hist((events-peak_positions_t0_intial)*1e9, bins=650, alpha=0.5, color='black', label='Data_4.1kv')
+F1x ,F1y = read_data_hist('./Ion_feedback_data/F1--alex gas--ion-10k-4kv--newdropper--00000.txt')
+plt.plot((F1x-peak_heights_t0_intial)*1e9, F1y, 'o-', color='green', label='F1_4kv')
+#laser_off = read_data('./Ion_feedback_data/F5--alex gas--ion-10k--with-min--no--laser--00000.txt')
+#print(np.mean(laser_off))
+
+
+#plt.yscale('log')
+plt.xlim(0, 75)
+plt.xlabel('Time [ns]')
+plt.ylabel('Events')
+plt.legend()
+
+plt.figure(figsize=(10, 6))
+cath = [50,100,200]
+for i in range(len(cath)):
+    events_0 = read_data(f'./Ion_feedback_data/F4--alex gas-cath--{cath[i]}v--00000.txt')
+    peak_positions_t0_intial, peak_heights_t0_intial = find_offset(events_0)
+    #plt.hist((events_0-peak_positions_t0_intial)*1e9, bins=600, alpha=0.5, label=f'0...{cath[i]}v')
+    after_plot = read_data(f'./Ion_feedback_data/F3--alex gas-cath--{cath[i]}v--00000.txt')
+    #plt.hist((after_plot-peak_positions_t0_intial)*1e9, bins=600, alpha=0.5, label=f'afterpluse..{cath[i]}v')
+
+laser_noise = read_data('./Ion_feedback_data/F3--alex gas-just--laser-00000--00000.txt')
+plt.hist(laser_noise*1e9, bins=600, alpha=0.5, label='laser noise')
+plt.ylim(0, 100)
+plt.xlim(0, 75)
+plt.xlabel('Time [ns]')
+plt.ylabel('Events')
+plt.title('Events vs. Time')
+plt.legend()
+
+
+plt.show()

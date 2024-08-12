@@ -1,13 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 import scipy.constants
 
 
 def solve_for_intercept_time(x0, v0, acc, target_distance):
-    '''
+    """
     Solve for the intercept time when the particle reaches the target distance in the y direction.
-    '''
+    """
     # Define the polynomial coefficients for the equation of motion in the y direction
     coeffs = [
         0.5 * acc[1],  # t^2 term
@@ -29,17 +28,40 @@ def solve_for_intercept_time(x0, v0, acc, target_distance):
 
 
 def step_position(x0, v0, acc, time):
-    '''
+    """
     Position after time step
-    '''
+    """
     x0 = np.array(x0)
     v0 = np.array(v0)
     acc = np.array(acc)
     return x0 + v0 * time + 0.5 * acc * time ** 2
 
-def electron_trajectory(target_distance, q_t, mass, initial_energy, theta_deg=8, dt=1e-10):
+
+def rotate_coordinates(x, y, theta):
     """
-    Simulates the trajectory of an electron (or ion) in an electric field until it reaches the target distance in the z-axis.
+    Rotate coordinates
+    """
+    angle_degrees = - theta
+    # Convert the angle to radians
+    angle_radians = np.deg2rad(angle_degrees)
+
+    # Create the rotation matrix
+    rotation_matrix = np.array([
+        [np.cos(angle_radians), -np.sin(angle_radians)],
+        [np.sin(angle_radians), np.cos(angle_radians)]
+    ])
+    coordinates = np.stack((x, y))
+    # Apply the rotation matrix to the coordinates
+    rotated_coordinates = np.dot(rotation_matrix, coordinates)
+    x_rotate, y_rotate = rotated_coordinates
+
+    return x_rotate, y_rotate
+
+
+def electron_trajectory(target_distance, q_t, mass, initial_energy, theta_deg, voltage):
+    """
+    Simulates the trajectory of an electron (or ion) in an electric field until it reaches the target distance in
+    the z-axis.
     
     Parameters:
     - initial_energy: Initial kinetic energy in Joules
@@ -53,77 +75,96 @@ def electron_trajectory(target_distance, q_t, mass, initial_energy, theta_deg=8,
     - x, y, z: Position arrays
     """
     c = scipy.constants.speed_of_light
-    v_i = np.sqrt(initial_energy/mass)*c  # velocity in mm/ns
+    print(f"mass {mass} eV")
+    v_i = np.sqrt((2*initial_energy)/mass)*c
+    print(f"initial velocity {v_i/c} m/s")  # velocity in mm/ns
 
-    # Convert angle to radians
     theta = np.deg2rad(theta_deg)
-    cathode_field = 200/ target_distance
+    cathode_field = voltage / target_distance
     # Calculate acceleration components
     a_y = cathode_field * q_t
+    print(f"acceleration in y direction {a_y} m/s^2")
 
     # Initialize lists for time, position, and velocity
-    t = []
+
     x = []
     y = []
-    z = []
-    vx = [v_i * np.sin(theta)]
+
+    vx = [v_i*np.sin(theta)]
     vy = [v_i * np.cos(theta)]
-    vz = [0]
-    v_abs = np.sqrt(vx[0]**2 + vy[0]**2 + vz[0]**2)
-    print(f"magitude of velocity {v_abs} m/s with energy in is {v_i} ev")
 
     # Solve for intercept time
-    intercept_time = solve_for_intercept_time([0, 0], [vx[0], vy[0]], [a_x, a_y], target_distance)
+    intercept_time = solve_for_intercept_time([0, 0], [vx[0], vy[0]], [0, a_y], target_distance)
+    t = [intercept_time]
     print(f"Time to intercept target {intercept_time*1e9} ns")
+    x_end = step_position([0, 0], [vx[0], vy[0]], [0, a_y], intercept_time)
+    print(f"end position {x_end}")
+    dt = 1000
+    # Simulate the trajectory
+    for i in range(dt):
+        x_end = step_position([0, 0], [vx[0], vy[0]], [0, a_y], intercept_time*(i/dt))
+        x.append(x_end[0])
+        y.append(x_end[1])
+    return x, y, t
 
-    for i in range(100):
-       if i == 0:
-           x.append(0)
-           y.append(0)
-           xi = step_position([0, 0], [vx[0], vy[0]], [a_x, a_y], intercept_time)
-       xj = step_position(xi, [vx[0], vy[0]], [a_x, a_y], intercept_time / 1000)
-       print(f"xj {xj} ")
-       xi = xj
-       t.append(i * intercept_time / 100)
-       x.append(xj[0])
-       y.append(xj[1])
 
-    t = np.array(t)
-    x = np.array(x)
-    y = np.array(y)
-    z = np.array(z)
-
-    # Plot the trajectory of the electron in 3D
-    
-    return x, y, z, t
-
-# Example usage:
-  # Initial kinetic energy in Joules
-target_distance = 0.5e-3  # Target distance in meters (2 mm)
+# Parameters
+target_distance = 500e-6  # Target distance in meters
 Q_t = 1.76e11  # Mass of electron in kg
-
-
-initial_energy =  1000 # in eV
+initial_energies = [0, 30, 1000]  # in eV
 Q_m = 9.58e7
-ions = [Q_m,Q_m, Q_m / 5, Q_m / 8, Q_m / 10, Q_m / 12, Q_m / 18,  Q_m /2000]
-ion_mass_in_ev = [511e3,938.272e6, 938.272e6*5, 7485.3e6, 9370.4e6, 11244.5e6, 16866.8e6,  938.272e6*2000]
+ions = [1.76e11, Q_m, Q_m / 5, Q_m / 8, Q_m / 10, Q_m / 15, Q_m / 20, Q_m / 25, Q_m / 30]
+ion_mass_in_ev = [511e3, 938.272e6, 938.272e6*5, 938.272e6*8, 938.272e6*10, 938.272e6*15, 938.272e6*20, 938.272e6*25,
+                  938.272e6*30]
+norm_ion_mass = [mass / 938.272e6 for mass in ion_mass_in_ev]
+voltages = 200
+times = {energy: [] for energy in initial_energies}
 
 
+plt.figure(figsize=(16, 8))
 for mass, charge_mass_ratio in zip(ion_mass_in_ev, ions):
-    x, y, z, t = electron_trajectory(target_distance,charge_mass_ratio, mass, initial_energy)
-    print(mass)
-    print(t)
-    plt.plot(x, y, label=f'Mass {mass/1e6:.1f} MeV/c^2, time: {t[-1]/1e-9:.4f} ')
+    for initial_energy in initial_energies:
+        t = 0
+        xi, yi, ti = electron_trajectory(target_distance, charge_mass_ratio, mass, initial_energy, 8, voltages)
+        if initial_energy == 1000:
+            x, y, t = electron_trajectory(460e-6, charge_mass_ratio, mass, 0,
+                                          90, 1000)
+            x_rotated, y_rotated = rotate_coordinates(x, y, 8)
+            x_rotated = np.array(x_rotated-x_rotated[-1]) * 1e3
+            y_rotated = np.array(y_rotated-460e-6) * 1e3
 
-# Labeling the Axes
-plt.xlabel('x position (m)')
-plt.ylabel('y position (m)')
+            plt.plot(x_rotated, y_rotated, label=f'{mass / 1e6:.1f} MeV/c^2, t_o_f: {t[-1] / 1e-9:.4f},'
+                                                 f' int_en: {initial_energy} ev')
+            t = t[-1]
+
+        xi = np.array(xi) * 1e3
+        yi = np.array(yi) * 1e3
+        total_t = ti[-1] + t
+        print(f"total time {total_t*1e9} ns")
+        plt.plot(xi, yi, label=f'{mass / 1e6:.1f} MeV/c^2, t_o_f: {ti[-1] / 1e-9:.4f}'
+                               f', int_en: {initial_energy} ev')
+        times[initial_energy].append(total_t * 1e9)
+
+
+plt.xlabel('x position (mm)')
+plt.ylabel('y position (mm)')
+
 
 # Title and Legend
-plt.title('Electron Trajectories for Different Ion Masses')
+plt.title('Electron Trajectories for Different Ion Masses,\n coming out at a 8 degree angle with 1000ev')
+plt.legend()
+plt.figure(figsize=(16, 8))
+colors = ['b', 'g', 'r']  # colors for the different energy levels
+for energy, color in zip(initial_energies, colors):
+    print(times[energy])
+    if energy == 1000:
+        plt.plot(norm_ion_mass, times[energy], 'o-', color=color, label=f'{energy}  eV,'
+                                                                        f' starting from bottom of the pore')
+    else:
+        plt.plot(norm_ion_mass, times[energy], 'o-', color=color, label=f'{energy}  eV')
+plt.xlabel('Mass number')
+plt.ylabel('Time [ns]')
+plt.title('Time of Flight vs. Mass Number')
 plt.legend()
 
-# Show plot
 plt.show()
-#t = electron_trajectory(target_distance, Q_t,m, initial_energy)
-#print(t)
