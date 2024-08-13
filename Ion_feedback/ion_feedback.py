@@ -81,7 +81,7 @@ def find_offset(data):
     return peak_positions, peak_heights
 
 anode_gap = 5.15e-3
-cathode_gap = 0.5e-3 # between 0.2 mm and 0.5 mm calculated gap 0.295 mm
+cathode_gap = 0.431e-3 # between 0.2 mm and 0.5 mm calculated gap 0.295 mm
 mcp_gap = 460e-6 # 460 um photonis mcp value from datasheet
 mcp_bais_angle = 8 # degrees
 q_m_hydrogen = 9.58e7 

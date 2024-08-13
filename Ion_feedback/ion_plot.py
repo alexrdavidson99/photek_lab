@@ -109,7 +109,7 @@ def electron_trajectory(target_distance, q_t, mass, initial_energy, theta_deg, v
 
 
 # Parameters
-target_distance = 500e-6  # Target distance in meters
+target_distance = 431e-6  # Target distance in meters
 Q_t = 1.76e11  # Mass of electron in kg
 initial_energies = [0, 30, 1000]  # in eV
 Q_m = 9.58e7
