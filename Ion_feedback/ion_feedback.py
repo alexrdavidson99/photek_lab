@@ -183,26 +183,20 @@ plt.ylabel('Events')
 plt.title('Events vs. Time')
 plt.savefig('ion_feedback_F1.pdf', dpi=300)
 
-events_intital_data = read_data('./Ion_feedback_data/F4--alex gas--ion-10k-4.1kv--newdropper--00000.txt')
+events_intital_data = read_data('./Ion_feedback_data/waveform_10k/F4--alex gas--700v-mcp-10k--waveform--trend--00000.txt')
 peak_positions_t0_intial, peak_heights_t0_intial = find_offset(events_intital_data)
-
+mean = np.mean(events_intital_data)
+events_intital_data = mean
 plt.figure(figsize=(10, 6))
-inital_data_events = read_data('./Ion_feedback_data/F4--alex gas--ion-10k-4.1kv--newdropper--00000.txt')
-inital_data_events = read_data('./Ion_feedback_data/F4--alex gas--ion-10k-4kv--newdropper--00000.txt')
-plt.hist((inital_data_events-peak_positions_t0_intial)*1e9, bins=300, alpha=0.5, color='blue', label='Initial peak')
-#min_events = read_data('./Ion_feedback_data/F5--alex gas--ion-100k--with-min--00000.txt')
-events = read_data('./Ion_feedback_data/F3--alex gas--ion-10k-4kv--newdropper--00000.txt')
-plt.hist((events-peak_positions_t0_intial)*1e9, bins=650, alpha=0.5, color='red', label='Data_4kv')
-events = read_data('./Ion_feedback_data/F3--alex gas--ion-10k-4.1kv--newdropper--00000.txt')
-plt.hist((events-peak_positions_t0_intial)*1e9, bins=650, alpha=0.5, color='black', label='Data_4.1kv')
-F1x ,F1y = read_data_hist('./Ion_feedback_data/F1--alex gas--ion-10k-4kv--newdropper--00000.txt')
-plt.plot((F1x-peak_heights_t0_intial)*1e9, F1y, 'o-', color='green', label='F1_4kv')
-#laser_off = read_data('./Ion_feedback_data/F5--alex gas--ion-10k--with-min--no--laser--00000.txt')
-#print(np.mean(laser_off))
+events = read_data('./Ion_feedback_data/waveform_10k/F3--alex gas--700v-mcp-10k--waveform--trend--00000.txt')
+int_peak = read_data('./Ion_feedback_data/waveform_10k/F4--alex gas--700v-mcp-10k--waveform--trend--00000.txt')
+
+plt.hist((events-peak_positions_t0_intial)*1e9, bins=300, alpha=0.5, color='blue', label='Initial Data')
+plt.hist((int_peak-peak_positions_t0_intial)*1e9, bins=300, alpha=0.5, color='green', label='Initial Peak')
 
 
-#plt.yscale('log')
-plt.xlim(0, 75)
+
+#
 plt.xlabel('Time [ns]')
 plt.ylabel('Events')
 plt.legend()
