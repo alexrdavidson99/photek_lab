@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
 from scipy.signal import find_peaks
 import pandas as pd
 import numpy as np
@@ -6,16 +7,16 @@ from joblib import Parallel, delayed
 
 
 def read_data_hist(filename):
-    data = pd.read_csv(filename, comment='#', names=["time", "hits"], skiprows=1, dtype={"time": float, "hits": float})
+    data = pd.read_csv(filename, comment='#', names=["time", "hits"], skiprows=5, dtype={"time": float, "hits": float})
     return data['time'], data['hits']
 
 def process_file(file_name,i):
     time, voltage = read_data_hist(f"{file_name}--{i:05}.txt")
-    threshold = 0.014
+    threshold = 100
     # Invert the voltage to find dips as peaks
     voltage = -voltage
     # Find the first significant peak (dip in original data)
-    peaks, _ = find_peaks(voltage, height=0.0015, distance=350, prominence=0.001)
+    peaks, _ = find_peaks(voltage, height=0.0035, distance=350, prominence=0.001)
 
     peak_heights_dict = {i: height for i, height in enumerate( voltage[peaks]) if height < threshold}
     peak_times = time[peaks].astype(float).tolist()
@@ -23,25 +24,43 @@ def process_file(file_name,i):
     return peak_times, len(peak_times), peak_heights_dict
 
 def looking_at_peaks(file_name,j,k):
+    waveform_voltages = []
+    wavefrom_times = []
     for i in range(j, k):
         time, voltage = read_data_hist(f"{file_name}--{i:05}.txt")
 
         voltage = -voltage
         # Find the first significant peak (dip in original data)
-        peaks, _ = find_peaks(voltage, height=0.0017, distance=220, prominence=0.001)
+        peaks, _ = find_peaks(voltage, height=0.0035, distance=220, prominence=0.001)
         peak_time = time[peaks]
         peak_positions = voltage[peaks]
 
-        #plt.figure()
+
         plt.plot(time, voltage)
         plt.plot(peak_time, peak_positions, 'x')
-
+        wavefrom_times.append(time)
+        waveform_voltages.append(-voltage)
     plt.show()
+    return waveform_voltages, wavefrom_times
 #file_name = "Ion_feedback_data/waveform/ion--waveform__back_up/C4--alex gas--700v-mcp--waveform"
 file_name = "Ion_feedback_data/waveform_10k/ion-10k-wave-form/C4--alex gas--700v-mcp-10k--waveform"
-looking_at_peaks(file_name, 800, 900)
+#file_name = "Ion_feedback_data/10k-min-laser-bi/10k-min-laser-bi/C4--alex gas--700v-mcp-10k-min-laser--waveform--binary"
+plt.figure(figsize=(20, 8))
+waveform_voltages, waveform_times = looking_at_peaks(file_name, 0, 10000)
+waveform_times = np.array(waveform_times).flatten()
+waveform_voltages = np.array(waveform_voltages).flatten()
+norm = LogNorm(vmin=1, vmax=500)
+# Create a 2D histogram of the data
+plt.hist2d(waveform_times*1e9, waveform_voltages, bins=[250,100],norm=norm, cmap='viridis')
+plt.ylim(-0.015, 0.005)
+plt.xlim(0, 200)
+plt.colorbar(label='Count')
+plt.xlabel('Time [ns]')
+plt.ylabel('Voltage')
+plt.title('Persistence Plot')
+plt.figure()
 
-results = Parallel(n_jobs=-1)(delayed(process_file)(file_name, i) for i in range(0, 9999))
+results = Parallel(n_jobs=-1)(delayed(process_file)(file_name, i) for i in range(0, 10000))
 
 hist_peaks = [item for sublist in [result[0] for result in results] for item in sublist]
 num_peaks = [result[1] for result in results]
@@ -73,8 +92,8 @@ plt.ylabel('Counts')
 plt.title('Events vs. Time')
 
 plt.figure(figsize=(10, 6))
-ions = [0.5, 1, 2, 4, 8, 18, 37]
-plt.plot(ions,peak_positions)
+#ions = [0.5, 1, 2, 4, 8, 18, 37]
+#plt.plot(ions,peak_positions)
 plt.figure()
 bin_edges = np.arange(0, np.max(num_peaks)+1, 0.5)
 
