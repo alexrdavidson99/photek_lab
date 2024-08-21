@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.constants
-
+import pandas as pd
 
 def solve_for_intercept_time(x0, v0, acc, target_distance):
     """
@@ -111,11 +111,10 @@ def electron_trajectory(target_distance, q_t, mass, initial_energy, theta_deg, v
 # Parameters
 target_distance = 431e-6  # Target distance in meters
 Q_t = 1.76e11  # Mass of electron in kg
-initial_energies = [0, 30, 1000]  # in eV
+initial_energies = [0, 700,1400]  # in eV
 Q_m = 9.58e7
-ions = [1.76e11, Q_m, Q_m / 5, Q_m / 8, Q_m / 10, Q_m / 15, Q_m / 20, Q_m / 25, Q_m / 30]
-ion_mass_in_ev = [511e3, 938.272e6, 938.272e6*5, 938.272e6*8, 938.272e6*10, 938.272e6*15, 938.272e6*20, 938.272e6*25,
-                  938.272e6*30]
+ions = [1.76e11, Q_m/2, Q_m / 5, Q_m / 8, Q_m / 10, Q_m / 15]
+ion_mass_in_ev = [511e3, 938.272e6*2, 938.272e6*5, 938.272e6*8, 938.272e6*10, 938.272e6*15]
 norm_ion_mass = [mass / 938.272e6 for mass in ion_mass_in_ev]
 voltages = 200
 times = {energy: [] for energy in initial_energies}
@@ -126,9 +125,9 @@ for mass, charge_mass_ratio in zip(ion_mass_in_ev, ions):
     for initial_energy in initial_energies:
         t = 0
         xi, yi, ti = electron_trajectory(target_distance, charge_mass_ratio, mass, initial_energy, 8, voltages)
-        if initial_energy == 1000:
+        if initial_energy == 700:
             x, y, t = electron_trajectory(460e-6, charge_mass_ratio, mass, 0,
-                                          90, 1000)
+                                          90, 700)
             x_rotated, y_rotated = rotate_coordinates(x, y, 8)
             x_rotated = np.array(x_rotated-x_rotated[-1]) * 1e3
             y_rotated = np.array(y_rotated-460e-6) * 1e3
@@ -151,13 +150,13 @@ plt.ylabel('y position (mm)')
 
 
 # Title and Legend
-plt.title('Electron Trajectories for Different Ion Masses,\n coming out at a 8 degree angle with 1000ev')
+plt.title('Electron Trajectories for Different Ion Masses,\n coming out at a 8 degree angle with 700ev')
 plt.legend()
 plt.figure(figsize=(16, 8))
 colors = ['b', 'g', 'r']  # colors for the different energy levels
 for energy, color in zip(initial_energies, colors):
     print(times[energy])
-    if energy == 1000:
+    if energy == 700:
         plt.plot(norm_ion_mass, times[energy], 'o-', color=color, label=f'{energy}  eV,'
                                                                         f' starting from bottom of the pore')
     else:
@@ -168,3 +167,15 @@ plt.title('Time of Flight vs. Mass Number')
 plt.legend()
 
 plt.show()
+
+paper_data = pd.read_csv('Ion_feedback_data/paper/mass_time_table.txt', sep=',', names=['Source', 'Ion',
+                                        'Mass [kg]', 'Calculated time [μs]', 'Corresponding after-pulse group',
+                                        'Average measured time [μs]'], skiprows=1)
+
+calculated_times = np.array(paper_data['Calculated time [μs]'])
+
+# Perform the division of the DataFrame by the last value in the 'Calculated time [μs]' column
+paper_data_normalized = paper_data.copy()  # Create a copy to avoid modifying the original data
+paper_data_normalized['Calculated time [μs]'] = paper_data['Calculated time [μs]'] / calculated_times[1]
+
+print(paper_data_normalized['Calculated time [μs]'])

@@ -4,6 +4,7 @@ from scipy.signal import find_peaks
 import pandas as pd
 import numpy as np
 from joblib import Parallel, delayed
+from scipy.ndimage import gaussian_filter1d
 
 
 def read_data_hist(filename):
@@ -15,12 +16,14 @@ def process_file(file_name,i):
     threshold = 100
     # Invert the voltage to find dips as peaks
     voltage = -voltage
+    voltage = gaussian_filter1d(voltage, sigma=20)
     # Find the first significant peak (dip in original data)
-    peaks, _ = find_peaks(voltage, height=0.0035, distance=350, prominence=0.001)
+    peaks, _ = find_peaks(voltage, height=0.0030, distance=350, prominence=0.001)
 
     peak_heights_dict = {i: height for i, height in enumerate( voltage[peaks]) if height < threshold}
     peak_times = time[peaks].astype(float).tolist()
     peak_times = [time[i].astype(float) for i in peaks if voltage[i] < threshold]
+    print(f"NUMBER OF PEAKS  {len(peak_times)} data number {i}")
     return peak_times, len(peak_times), peak_heights_dict
 
 def looking_at_peaks(file_name,j,k):
@@ -30,8 +33,9 @@ def looking_at_peaks(file_name,j,k):
         time, voltage = read_data_hist(f"{file_name}--{i:05}.txt")
 
         voltage = -voltage
+        voltage = gaussian_filter1d(voltage, sigma=20)
         # Find the first significant peak (dip in original data)
-        peaks, _ = find_peaks(voltage, height=0.0035, distance=220, prominence=0.001)
+        peaks, _ = find_peaks(voltage, height=0.0030, distance=220, prominence=0.001)
         peak_time = time[peaks]
         peak_positions = voltage[peaks]
 
@@ -43,10 +47,10 @@ def looking_at_peaks(file_name,j,k):
     plt.show()
     return waveform_voltages, wavefrom_times
 #file_name = "Ion_feedback_data/waveform/ion--waveform__back_up/C4--alex gas--700v-mcp--waveform"
-file_name = "Ion_feedback_data/waveform_10k/ion-10k-wave-form/C4--alex gas--700v-mcp-10k--waveform"
-#file_name = "Ion_feedback_data/10k-min-laser-bi/10k-min-laser-bi/C4--alex gas--700v-mcp-10k-min-laser--waveform--binary"
+#file_name = "Ion_feedback_data/waveform_10k/ion-10k-wave-form/C4--alex gas--700v-mcp-10k--waveform"
+file_name = "Ion_feedback_data/10k-min-laser-bi/10k-min-laser-bi/C4--alex gas--700v-mcp-10k-min-laser--waveform--binary"
 plt.figure(figsize=(20, 8))
-waveform_voltages, waveform_times = looking_at_peaks(file_name, 0, 10000)
+waveform_voltages, waveform_times = looking_at_peaks(file_name, 1560, 1600)
 waveform_times = np.array(waveform_times).flatten()
 waveform_voltages = np.array(waveform_voltages).flatten()
 norm = LogNorm(vmin=1, vmax=500)
@@ -60,7 +64,7 @@ plt.ylabel('Voltage')
 plt.title('Persistence Plot')
 plt.figure()
 
-results = Parallel(n_jobs=-1)(delayed(process_file)(file_name, i) for i in range(0, 10000))
+results = Parallel(n_jobs=-1)(delayed(process_file)(file_name, i) for i in range(0, 10))
 
 hist_peaks = [item for sublist in [result[0] for result in results] for item in sublist]
 num_peaks = [result[1] for result in results]
@@ -80,8 +84,8 @@ ion_peaks = np.array(ion_peaks)
 
 plt.figure(figsize=(10, 6))
 mean_first_peak = np.mean(first_peak)
-hist_vals, bin_edges, _ = plt.hist((ion_peaks-mean_first_peak)*1e9, bins=300)
-hist_peaks, _ = find_peaks(hist_vals, height=25, distance=10)
+hist_vals, bin_edges, _ = plt.hist((ion_peaks-mean_first_peak)*1e9, bins=350)
+hist_peaks, _ = find_peaks(hist_vals,height=10)
 peak_positions = bin_edges[hist_peaks]
 peak_heights = hist_vals[hist_peaks]
 plt.plot(peak_positions, peak_heights, 'x')
@@ -92,7 +96,7 @@ plt.ylabel('Counts')
 plt.title('Events vs. Time')
 
 plt.figure(figsize=(10, 6))
-#ions = [0.5, 1, 2, 4, 8, 18, 37]
+#ions = [1, 2, 4, 8, 18, 37]
 #plt.plot(ions,peak_positions)
 plt.figure()
 bin_edges = np.arange(0, np.max(num_peaks)+1, 0.5)
