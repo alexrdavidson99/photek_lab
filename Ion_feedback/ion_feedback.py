@@ -68,7 +68,7 @@ def read_data(filename):
     print(f"number captured events..{len(data['events'])}")
     return data['events'].reset_index(drop=True)
 def read_data_hist(filename):
-    data = pd.read_csv(filename, comment='#', names=["time", "hits"], skiprows=1, dtype={"time": float, "hits": int})
+    data = pd.read_csv(filename, comment='#', names=["time", "hits"], skiprows=6, dtype={"time": float, "hits": int})
     return data['time'], data['hits']
 
 
@@ -219,5 +219,43 @@ plt.ylabel('Events')
 plt.title('Events vs. Time')
 plt.legend()
 
+plt.figure(figsize=(10, 6))
+events_0 = read_data(f'./Ion_feedback_data/13150210-min-10-bi-ml-trend-data/F4--trend-13150210-ml--00000.txt')
+peak_positions_t0_intial, peak_heights_t0_intial = find_offset(events_0)
+plt.hist((events_0-peak_positions_t0_intial)*1e9, bins=100, alpha=0.5)
+after_plot = read_data(f'./Ion_feedback_data/13150210-min-10-bi-ml-trend-data/F3--trend-13150210-ml--00000.txt')
+plt.hist((after_plot-peak_positions_t0_intial)*1e9, bins=100, alpha=0.5)
+plt.ylim(0, 100)
+plt.xlim(0, 75)
+plt.figure()
+x,y = read_data_hist(f'./Ion_feedback_data/13150210-min-10-bi-ml-trend-data/F1--trend-13150210-ml--00000.txt')
+x_F2,y_F2 = read_data_hist(f'./Ion_feedback_data/13150210-min-10-bi-ml-trend-data/F2--trend-13150210-ml--00000.txt')
 
+peaks, _ = find_peaks(y_F2, height=1000)
+peak_positions = x_F2[peaks]
+peak_heights = y_F2[peaks]
+print(f"peaks t0 {peak_heights } ns")
+#plt.scatter(peak_positions, peak_heights, color='black', label='Peaks')
+x = (x-6.4e-9)
+plt.plot((x_F2-6.4e-9)*1e9, y_F2, 'o-', color='blue')
+plt.plot(x*1e9, y, 'o-', color='red')
+y  = np.array(y)
+y_F2 = np.array(y_F2)
+
+
+peaks, _ = find_peaks(y, height=15)
+peak_positions = x[peaks]
+peak_heights = y[peaks]
+
+print(f"number of ion peaks {sum(y)} compared to photoelectrons events {sum(y_F2)}")
+print(f"peaks t0 {peak_positions } ns")
+plt.ylim(0, 34)
+plt.xlim(0, 75)
+#plt.xlabel('Time [ns]')
+#plt.ylabel('Events')
+#plt.title('Events vs. Time')
+
+plt.xlabel('Time [ns]')
+plt.ylabel('Events')
+plt.title('Events vs. Time')
 plt.show()

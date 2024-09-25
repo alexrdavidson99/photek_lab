@@ -108,15 +108,17 @@ def looking_at_peaks(file_name,j,k):
     hist_peaks, _ = find_peaks(hist_vals, height=66)
     peak_positions = bin_edges[hist_peaks]
     print(peak_positions)
-    plt.hist(area_hist_ion_electrons / peak_positions, bins=100, alpha=0.5)
-    plt.hist(area_hist_photon_electrons/ peak_positions, bins=100, alpha=0.5)
+    plt.hist(area_hist_ion_electrons / peak_positions, bins=100, alpha=0.5, color='orange', label='Area under Gaussian ion')
+    plt.hist(area_hist_photon_electrons/ peak_positions, bins=100, alpha=0.5, color='red', label='Area under Gaussian photon')
+    plt.xlabel('Number of photo electrons')
+    plt.ylabel('Counts')
     plt.show()
     return waveform_voltages, wavefrom_times
 #file_name = "Ion_feedback_data/waveform/ion--waveform__back_up/C4--alex gas--700v-mcp--waveform"
 #file_name = "Ion_feedback_data/waveform_10k/ion-10k-wave-form/C4--alex gas--700v-mcp-10k--waveform"
 file_name = "Ion_feedback_data/10k-min-laser-bi/10k-min-laser-bi/C4--alex gas--700v-mcp-10k-min-laser--waveform--binary"
 plt.figure(figsize=(20, 8))
-waveform_voltages, waveform_times = looking_at_peaks(file_name, 0, 1)
+waveform_voltages, waveform_times = looking_at_peaks(file_name, 0, 100)
 waveform_times = np.array(waveform_times).flatten()
 waveform_voltages = np.array(waveform_voltages).flatten()
 norm = LogNorm(vmin=1, vmax=500)
@@ -162,8 +164,8 @@ plt.ylabel('Counts')
 plt.title('Events vs. Time')
 
 plt.figure(figsize=(10, 6))
-#ions = [1, 2, 4, 8, 18, 37]
-#plt.plot(ions,peak_positions)
+ions = [1, 2, 3, 4, 5]
+plt.plot(ions,peak_positions)
 plt.figure()
 bin_edges = np.arange(0, np.max(num_peaks)+1, 0.5)
 

@@ -2,3 +2,5 @@
 *.pdf
 *.txt
 *.venv
+*.csv
+*.trc
