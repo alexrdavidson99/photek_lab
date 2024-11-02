@@ -83,7 +83,8 @@ def looking_at_peaks(file_names, i,j):
 #file_name = "C:/Users/lexda/PycharmProjects/Photek_lab/Ion_feedback/Ion_feedback_data/13150210-min-10-bi-ml/"
 #file_name = "C:/Users/lexda/PycharmProjects/Photek_lab/Ion_feedback/Ion_feedback_data/10k-just-ion-13150210-10ns"
 #file_name = "C:/Users/lexda/PycharmProjects/Photek_lab/Ion_feedback/Ion_feedback_data/13150210-2.47-1.67-0.93-10k-10ns" # height=0.0008,distance=50, prominence=0.0008
-file_name = "C:/Users/lexda/PycharmProjects/Photek_lab/Ion_feedback/Ion_feedback_data/new-trig-240-l-old-pmt"
+#file_name = "C:/Users/lexda/PycharmProjects/Photek_lab/Ion_feedback/Ion_feedback_data/new-trig-240-l-old-pmt"
+file_name = "C:/Users/lexda/PycharmProjects/Photek_lab/Ion_feedback/Ion_feedback_data/13150210-min-10-bi-ml"
 
 
 
@@ -135,16 +136,22 @@ for peak_times in [result[0] for result in results]:
 
 # Plot histogram of time differences
 plt.figure(figsize=(10, 6))
-hist_vals, bin_edges, _ = plt.hist(np.array(time_differences) * 1e9, bins=500)
+time_differences_array = np.array(time_differences)*1e9
+#hist_vals, bin_edges, _ = plt.hist(time_differences_array, bins=1000)
+bin_width_ns = 0.33
+hist_vals, bin_edges, _ = plt.hist(time_differences_array, bins=np.arange(min(time_differences_array), max(time_differences_array), bin_width_ns),
+         align='left', alpha=0.5, label='time differences')
 
 
 
-hist_peaks, _ = find_peaks(hist_vals, height=100, distance=5, prominence=8)
-print (hist_peaks)
+hist_peaks, _ = find_peaks(hist_vals, height=100, distance=7, prominence=8)
 
+#peak_bin_centers = (bin_edges[hist_peaks] + bin_edges[hist_peaks + 1]) / 2
+peak_bin_centers = bin_edges[hist_peaks] # (bin_width_ns )
 peak_positions = bin_edges[hist_peaks]
 peak_heights = hist_vals[hist_peaks]
-plt.plot(peak_positions, peak_heights, 'x')
+print (f" peak bin centers {peak_bin_centers}")
+plt.plot(peak_bin_centers, peak_heights, 'x')
 
 #plt.yscale('log')
 plt.xlim(0,50 )
