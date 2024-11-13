@@ -114,9 +114,10 @@ plt.savefig("PHD.png", dpi=600)
 #looking at IPD gain at multiple points along x 
 
 #base_folder_path = Path("C:/Users/lexda/Downloads/dropper_chain_2.728V/")
-base_folder_path = Path("C:/Users/lexda/local_pmt_info/characterisation/2024-09-25 LPG650 PHD/J_KL1/sum_test")
-# Recursively find all CSV files matching the pattern *SIG_*.csv
-sig_files = list(base_folder_path.rglob("*SIG*.txt"))
+base_folder_path = Path("C:/Users/lexda/local_pmt_info/characterisation/2024-09-25 LPG650 PHD/J_KL1/IPD_3min_int_volatge_range_1340_to1420V")
+
+# Recursively find all CSV files matching the pattern *SIG_*.csv #200_cathode_1340_MCP_3mins_int_35db
+sig_files = list(base_folder_path.rglob("*35db*.csv"))
 print(sig_files)
 
 counts = []
@@ -133,14 +134,15 @@ for i, sig_f in enumerate(sig_files):
     #formatted_number = f"{number:.2f}"
 
     #position.append(y_pos)
-    chans, sig = np.loadtxt(sig_f, delimiter="\t", skiprows=2, unpack=True)
+    chans, sig = np.loadtxt(sig_f, delimiter=",", skiprows=2, unpack=True)
     sig *= gain_norm[gain][0]
+    print("test")
     
     counts_sig.append(sum(sig)/int_time)
 
     
-    dn_f = sig_f.with_name(sig_f.name.replace("SIG", "DN"))
-    chans_df, df = np.loadtxt(dn_f, delimiter="\t", skiprows=2, unpack=True)
+    dn_f = sig_f.with_name(sig_f.name.replace("35db", "DN"))
+    chans_df, df = np.loadtxt(dn_f, delimiter=",", skiprows=2, unpack=True)
     df *= gain_norm[gain][0]
     counts_dn.append(sum(df)/int_time)
     
@@ -162,10 +164,10 @@ for i, sig_f in enumerate(sig_files):
     #    None
         #plt.plot(smoothed_cal, smoothed_df, label=f"{float(v)} V {sig_f.name}")
         
-    plt.plot(cal, sub[:-1], label=f"{float(v)} V {sig_f.name}")
+    plt.plot(cal, sub, label=f"{sig_f.name}")
     plt.xlabel("Gain (10$^6$ electrons)")
     plt.ylabel("N events")
-    plt.xlim(0, 2e6)
+    #plt.xlim(0, 2e6)
    
 
 
