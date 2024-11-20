@@ -1,58 +1,53 @@
 import matplotlib.pyplot as plt
 
 def apply_lhcb_style():
-    # Define the LHCb style for matplotlib rcParams
-    lhcb_style = {
-        # Use a similar font family and size
+    custom_style = {
         'font.family': 'serif',
-        'font.sans-serif': ['Times New Roman'],
-        'font.size': 18,  # Approximate size matching ROOT's lhcbTSize (0.06)
-
-        # Set line and marker style
+        'font.serif': 'Times New Roman',
+        'font.size': 18,
+        'axes.labelsize': 18,
+        'axes.titlesize': 18,
+        'axes.linewidth': 2,
+        'axes.grid': True,
+        'grid.linewidth': 2,
+        'grid.linestyle': '--',
+        'grid.alpha': 0.7,
+        'xtick.labelsize': 16,
+        'ytick.labelsize': 16,
+        'xtick.major.size': 10,
+        'xtick.major.width': 2,
+        'ytick.major.size': 10,
+        'ytick.major.width': 2,
+        'xtick.minor.size': 5,
+        'xtick.minor.width': 1,
+        'ytick.minor.size': 5,
+        'ytick.minor.width': 1,
+        'legend.fontsize': 16,
+        'legend.frameon': False,
+        'legend.borderaxespad': 0,
+        'legend.loc': 'best',
         'lines.linewidth': 2,
         'lines.markersize': 8,
-        'lines.marker': 'o',
-
-        # Set figure and axis background colors to white
-        'figure.facecolor': 'white',
+        'figure.figsize': (10, 7),
+        'figure.dpi': 100,
+        'savefig.dpi': 300,
+        'savefig.format': 'pdf',
+        'savefig.bbox': 'tight',
+        'savefig.pad_inches': 0.1,
+        'axes.spines.top': True,
+        'axes.spines.right': True,
+        'axes.spines.left': True,
+        'axes.spines.bottom': True,
+        'axes.edgecolor': 'black',
         'axes.facecolor': 'white',
-        'savefig.facecolor': 'white',
-        
-        # Set axis titles and labels font properties
-        'axes.titlesize': 2,  # Title size in points
-        'axes.labelsize': 200, # Label size in points
-        'axes.titleweight': 'bold',
-
-        # Tick settings, to include ticks on all sides
-        'xtick.top': True,
-        'ytick.right': True,
-        'xtick.direction': 'in',
-        'ytick.direction': 'in',
-        'xtick.major.size': 5,
-        'ytick.major.size': 5,
-
-        # Configure legend
-        'legend.frameon': False,  # Remove legend border
-        'legend.fontsize': 14,
-        'legend.loc': 'best',
-
-        # Adjust padding to reflect ROOT style margins
-        'axes.titlepad': 10,
-        'axes.labelpad': 8,
-
-        # Grid style similar to ROOT
-        'grid.color': 'gray',
-        'grid.linestyle': '--',
-        'grid.linewidth': 0.5,
-        
-        # Configure histogram/axes divisions
-        'xtick.major.pad': 8,  # Padding for x-axis major ticks
-        'ytick.major.pad': 8,  # Padding for y-axis major ticks
-        'axes.grid': True,
-        'axes.linewidth': 2,  # Set axis line thickness
+        'axes.labelcolor': 'black',
+        'xtick.color': 'black',
+        'ytick.color': 'black',
+        'text.usetex': False,
     }
 
-    # Apply the LHCb style to matplotlib
-    plt.rcParams.update(lhcb_style)
-    print("LHCb style applied to matplotlib.")
+    plt.rcParams.update(custom_style)
+
+# Apply the custom style
+
 

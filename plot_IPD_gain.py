@@ -1,7 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
-from scipy.integrate import simps,trapezoid
+#from scipy.integrate import simps,trapezoid
+import mplhep
+mplhep.style.use(mplhep.style.LHCb2)
 
 # Variables
 int_time = 1800.0
@@ -113,11 +115,19 @@ plt.savefig("PHD.png", dpi=600)
 
 #looking at IPD gain at multiple points along x 
 
-#base_folder_path = Path("C:/Users/lexda/Downloads/dropper_chain_2.728V/")
-base_folder_path = Path("C:/Users/lexda/local_pmt_info/characterisation/2024-09-25 LPG650 PHD/J_KL1/IPD_3min_int_volatge_range_1340_to1420V")
 
+
+base_folders = [
+    "C:/Users/lexda/local_pmt_info/characterisation/2024-09-25 LPG650 PHD/J_OP1/dropper_chain_2.728V",
+    "C:/Users/lexda/local_pmt_info/characterisation/2024-09-25 LPG650 PHD/J_CD0/dropper_chain_2.728V",
+    "C:/Users/lexda/local_pmt_info/characterisation/2024-09-25 LPG650 PHD/J_GH1/dropper_chain_2.728V",
+    "C:/Users/lexda/local_pmt_info/characterisation/2024-09-25 LPG650 PHD/J_KL0/dropper_chain_2.728V",
+    "C:/Users/lexda/local_pmt_info/characterisation/2024-09-25 LPG650 PHD/J_KL1/dropper_chain_2.728V",
+    
+
+]
 # Recursively find all CSV files matching the pattern *SIG_*.csv #200_cathode_1340_MCP_3mins_int_35db
-sig_files = list(base_folder_path.rglob("*35db*.csv"))
+sig_files = list(base_folder_path.glob("*SIG.txt"))
 print(sig_files)
 
 counts = []
@@ -125,52 +135,47 @@ position = []
 counts_dn = []
 counts_sig = []
 plt.figure()
+for base_folder in base_folders:
+    base_folder_path = Path(base_folder)
+    sig_files = list(base_folder_path.rglob("*SIG.txt"))
+    for i, sig_f in enumerate(sig_files):
+        parts = sig_f.stem.split("_")
+        #y_pos = float(parts[2])
 
-for i, sig_f in enumerate(sig_files):
-    parts = sig_f.stem.split("_")
-    #y_pos = float(parts[2])
+        # Format the number to two decimal places
+        #formatted_number = f"{number:.2f}"
 
-    # Format the number to two decimal places
-    #formatted_number = f"{number:.2f}"
+        #position.append(y_pos)
+        chans, sig = np.loadtxt(sig_f, delimiter="\t", skiprows=3, unpack=True)
+        sig *= gain_norm[gain][0]
+        print("test")
 
-    #position.append(y_pos)
-    chans, sig = np.loadtxt(sig_f, delimiter=",", skiprows=2, unpack=True)
-    sig *= gain_norm[gain][0]
-    print("test")
-    
-    counts_sig.append(sum(sig)/int_time)
-
-    
-    dn_f = sig_f.with_name(sig_f.name.replace("35db", "DN"))
-    chans_df, df = np.loadtxt(dn_f, delimiter=",", skiprows=2, unpack=True)
-    df *= gain_norm[gain][0]
-    counts_dn.append(sum(df)/int_time)
-    
-   
-    print(sum(sig)/5)
-    #counts.append(sum(sig)/int_time- sum(df)/int_time)
-    sub = sig - df
-    sub[sub < 0] = 0
-    smoothed_cal = moving_average(cal, 20)
-    smoothed_df = moving_average(sub[:-1], 20)
-    #numeric_value = float(parts[2])
-    area = simps(sub, dx=cal[1] - cal[0])
-
-    print(f"Area: {area}")
-    area = trapezoid(sub, dx=cal[1] - cal[0])
-    print(f"Area: {area}")
-    counts.append(area)
-    #if -10 <= numeric_value <= 10:
-    #    None
-        #plt.plot(smoothed_cal, smoothed_df, label=f"{float(v)} V {sig_f.name}")
-        
-    plt.plot(cal, sub, label=f"{sig_f.name}")
-    plt.xlabel("Gain (10$^6$ electrons)")
-    plt.ylabel("N events")
-    #plt.xlim(0, 2e6)
-   
+        counts_sig.append(sum(sig)/int_time)
 
 
+        dn_f = sig_f.with_name(sig_f.name.replace("SIG", "DN"))
+        chans_df, df = np.loadtxt(dn_f, delimiter="\t", skiprows=3, unpack=True)
+        df *= gain_norm[gain][0]
+        counts_dn.append(sum(df)/int_time)
+
+
+        print(sum(sig)/5)
+        #counts.append(sum(sig)/int_time- sum(df)/int_time)
+        sub = sig - df
+        sub[sub < 0] = 0
+       
+        sub_peak = np.max(sub)
+        nom_sub = sub/sub_peak
+        list_name = sig_f.name.split("_")
+        print(list_name)
+        plt.plot(cal, nom_sub , lw = 1, label=f"{list_name[1]}V")
+        plt.xlabel("Gain (electrons)")
+        plt.ylabel("N events")
+        #plt.xlim(0, 2e6)
+
+
+plt.gca().xaxis.set_label_coords(0.5, -0.1)  # Adjusts x label
+plt.gca().yaxis.set_label_coords(-0.1, 0.5) 
 position = np.array(position)
 counts = np.array(counts)
 counts_dn = np.array(counts_dn)
@@ -182,14 +187,7 @@ print(position)
 counts = counts[ind]
 counts_dn = counts_dn[ind]
 counts_sig = counts_sig[ind]
+
 plt.legend()
-plt.figure()
-plt.plot(position,counts, label = "subtracted")
-plt.plot(position,counts_dn, label = "DN")
-plt.xlabel("Pixel number")
-plt.ylabel("Counts")
-#plt.hlines(8000,-4.6,1.4,colors='r',linestyles='dashed')
-#plt.text(0,8000,'length of connector 6.6mm  ',color='r')
-#plt.plot(position,counts_sig, label = "SIG")
-plt.legend()
+ # Adjusts y label
 plt.show()

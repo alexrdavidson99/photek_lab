@@ -5,14 +5,17 @@ import pandas as pd
 from scipy.optimize import curve_fit
 from lhcb_style import apply_lhcb_style
 
+
 def gauss(x, mu, sigma, A):
     return A*np.exp(-(x-mu)**2/2/sigma**2)
 
 def bimodal(x, mu1, sigma1, A1, mu2, sigma2, A2):
     return gauss(x,mu1,sigma1,A1)+gauss(x,mu2,sigma2,A2)
 
+def trimodal(x, mu1, sigma1, A1, mu2, sigma2, A2, mu3, sigma3, A3):
+    return gauss(x, mu1, sigma1, A1) + gauss(x, mu2, sigma2, A2) + gauss(x, mu3, sigma3, A3)
 
-tts_path = Path("C:/Users/lexda/local_pmt_info/characterisation/tts/tts_J_LK1_1500back_1400MCP_skew_300_V_cathode")
+tts_path = Path("C:/Users/lexda/local_pmt_info/characterisation/tts/tts_J_LK1_1500back_1400MCP_skew_700_V_cathode")
 Fs = [1,2,3,5,6,7,9,10,11]
 FILES_PREFIX = [f"F{i}" for i in Fs]
 sig_files = list(tts_path.rglob("*-sig_*.csv"))
@@ -82,10 +85,14 @@ for i, tts_data in enumerate(sig_files):
             max_y_index =  np.argmax(y)
             max_x_value = x[max_y_index]
             max_y_value = y[max_y_index]
+
+            lower_bounds = [0, 0, 0, max_x_value, 0, 0, 0, 0, 0]
+            upper_bounds = [np.inf, np.inf, np.inf, max_x_value + 0.73e-9, np.inf, np.inf, np.inf, np.inf, np.inf]
     
-            expected = [2.8e-9, 0.15e-9, 100, max_x_value, 0.15e-9, max_y_value]
-    
-            params, cov = curve_fit(bimodal, x, y,expected)
+            expected = [2.6e-9, 0.05e-9, 500, 2.7e-9, 0.05e-9, max_y_value, 2.8e-9, 0.05e-9, 100]
+            #expected = [500, 2.6e-9, 0.05e-9, 200, 2.7e-9, 0.05e-9,  100, 2.8e-9, 0.05e-9] 
+            #params, cov = curve_fit(bimodal, x, y,expected)
+            params, cov = curve_fit(trimodal, x, y, p0=expected, bounds=(lower_bounds, upper_bounds))
             sigma=np.sqrt(np.diag(cov))
             x_fit = np.linspace(x.min(), x.max(), 500)
             #plot combined...
@@ -98,10 +105,11 @@ for i, tts_data in enumerate(sig_files):
             print(f"sigma2: {sigma2:.3e}")
             print(f"Overall RMS width: {overall_rms:.3e}")
 
-            ax3.plot(x_fit, bimodal(x_fit, *params), color='red', lw=3, label='model')
+            ax3.plot(x_fit, trimodal(x_fit, *params), color='red', lw=3, label='model')
             ax3.plot(x_fit, gauss(x_fit, *params[:3]), color='red', lw=1, ls="--", label='distribution 1')
-            ax3.plot(x_fit, gauss(x_fit, *params[3:]), color='red', lw=1, ls=":", label='distribution 2')
-            apply_lhcb_style()
+            ax3.plot(x_fit, gauss(x_fit, *params[3:6]), color='red', lw=1, ls=":", label='distribution 2', )
+            ax3.plot(x_fit, gauss(x_fit, *params[6:]), color='green', lw=1, ls=":", label='distribution 3', )
+            
         
         
     None 
@@ -121,9 +129,9 @@ ax2.legend()
 
 
 ax3.set_title('Histogram for F8 and above')
-ax3.set_xlabel('time (ps)')
-ax3.set_ylabel('counts')
+ax3.set_xlabel('time (ps)', fontsize=25)
+ax3.set_ylabel('counts', fontsize=25)
 ax3.legend()
-apply_lhcb_style()
+
 
 plt.show()
