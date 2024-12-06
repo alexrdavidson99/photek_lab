@@ -39,11 +39,22 @@ def extract_position_from_filename(filename):
     match = re.search(r'_(\d+\.\d+)\.txt', filename)
     return float(match.group(1)) if match else None
 
+def extract_xy_from_filename(filename):
+    """
+    Extract the x and y positions from filenames with pattern like 
+    'histogram_F5_80.97x_87.95y.txt'.
+    Returns x and y as floats.
+    """
+    match = re.search(r'_(\d+\.\d+)x_(\d+\.\d+)y\.txt', filename)
+    if match:
+        x, y = map(float, match.groups())
+        return x, y
+    return None, None
 
-path_string = "C:/Users/lexda/Desktop/Crosstalk_data_zip/week_28_07_23/measurement_93_95_0.1_step_10000s/"
 
+path_string = "C:/Users/lexda/local_pmt_info/characterisation/laser_sweeps/2d_sweep/89_hour_2D_week_end_scan"
 DATA_DIR = Path(path_string)
-directory = DATA_DIR / 'hist'
+directory = DATA_DIR / '91.55y'
 
 # Create directory and its parents if they don't exist
 os.makedirs(directory, exist_ok=True)
@@ -69,6 +80,7 @@ for field in range(5, 9):
       # Step size of 0.1
         # Format the position to one decimal place for the filename
         position_str = f'{position:.2f}'
+        print(f"Processing file {filepath} for position {position_str}")
         hist_data = pd.read_csv(filepath, delimiter=',', names=['bins', 'counts'], skiprows=1)
         
         
@@ -123,8 +135,8 @@ for field in range(5, 9):
         plt.plot(x_data, hist_data['counts'], label='Histogram Data')
        
 
-        plt.plot(x_values_for_gaussian, fitted_gaussian_10000, label='Fitted Gaussian', linestyle='--')
-        print()
+        #plt.plot(x_values_for_gaussian, fitted_gaussian_10000, label='Fitted Gaussian', linestyle='--')
+       
         # Plot the residuals only at the edges (tails)
         #plt.plot(x_data[tails_mask], residuals[tails_mask], 
         #        label='Residuals (Tails)', linestyle=':', color='red')
@@ -147,12 +159,14 @@ for field in range(5, 9):
         plt.xlabel('pwb [Vs]')
         plt.ylabel('counts')
         plt.yscale('log')
-        plt.ylim(1, 10e3)
+        plt.ylim(1, 100e3)
         positions.append(position)
         residuals_sums.append(residuals_sum)
         fields.append(f'F{field}')
         #plt.legend()
 
+print("len positions", len(positions))
+print("positions", positions)
 residuals_df = pd.DataFrame({
     'position': positions,
     'residuals_sum': residuals_sums,
@@ -183,6 +197,19 @@ for field in range(5, 9):
 
     high_residuals_mask = selected_residuals_sums > 100
     high_residuals_positions = selected_positions[high_residuals_mask]
+    sum_residuals = selected_residuals_sums[high_residuals_mask]
+    print(" len high_residuals_positions", len(high_residuals_positions))
+    print(" len high_residuals_mask", len(high_residuals_mask))
+    #plt.scatter(high_residuals_positions, sum_residuals, marker='*', s=10, linestyle='-', label=f'channle {field-4}')
+    
+    #plt.hist2d(high_residuals_positions,sum_residuals, bins=[len(high_residuals_positions), 12], weights=sum_residuals, cmap='viridis')
+    #plt.colorbar(label='Counts')
+    #plt.xlabel('Position')
+    #plt.ylabel('Gain')
+
+
+
+
 
     # Print the positions
     print(f"Positions with residual sums above 300 for field F{field}: {high_residuals_positions}")

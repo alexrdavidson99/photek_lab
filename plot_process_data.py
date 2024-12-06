@@ -5,7 +5,9 @@ import pandas as pd
 import json
 from scipy.optimize import curve_fit
 from lhcb_style import apply_lhcb_style
+from matplotlib.colors import LogNorm
 import mplhep
+pd.set_option('display.max_rows', None)
 mplhep.style.use(mplhep.style.LHCb2)
 
 def gaussian_with_offset(x, amp, mean, stddev, offset):
@@ -59,8 +61,39 @@ plt.plot(hist_1['bins']*1e9, hist_1['count']*1e3, label='wavefrom', color='red')
 plt.xlabel("time [ns]" )
 plt.ylabel("voltage [mV]")
 plt.legend()
-plt.show()
+#plt.show()
 
+
+# process gain and counts data for plotting
+# Load data from CSV file
+data_path = "C:/Users/lexda/local_pmt_info/characterisation/gain_results/gain_data_1460_v_mcp_0.1_step_90_int.csv"
+gain_data = pd.read_csv(data_path, delimiter=',',  names=['Position','gain','channle'], skiprows=1)
+
+data_path = "C:/Users/lexda/PycharmProjects/Photek_lab/residuals_sums_data.csv"
+counts_data = pd.read_csv(data_path, delimiter=',',  names=['Position','counts','channle'], skiprows=1)
+merged_data = pd.merge(gain_data, counts_data, on='Position', suffixes=('_gain', '_counts'))
+
+high_residuals_mask = merged_data["counts"] > 100 
+
+
+high_residuals_positions_merged = merged_data[high_residuals_mask]
+
+print (high_residuals_positions_merged)  
+counts = high_residuals_positions_merged['counts']
+
+print(counts)
+counts_greater_than_300 = counts[counts > 100]
+print("Counts greater than 300:")
+print(counts_greater_than_300)
+gain = high_residuals_positions_merged['gain']
+position = high_residuals_positions_merged['Position']
+
+plt.figure()
+plt.hist2d(position,gain, bins=[len(position), 50], weights=counts, cmap='viridis', norm=LogNorm(vmin=350, vmax=414))  
+plt.colorbar(label='Counts')
+plt.xlabel('Position')
+plt.ylabel('Gain')
+plt.show()
 
 
 
@@ -70,4 +103,4 @@ plt.show()
 
 
 # Show plot
-plt.show()
+#plt.show()
