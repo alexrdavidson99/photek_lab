@@ -6,7 +6,6 @@ import numpy as np
 #from ion_plot import electron_trajectory
 import matplotlib.pyplot as plt
 
-
 def step_energy( v0, acc, time,m):
     '''
     Energy after time step starting from emission velocity (ev)
@@ -30,9 +29,9 @@ def calculate_time(anode_gap, cathode_gap, mcp_gap, q_m,m):
     q_m_electron = 1.76e11  # Charge-to-mass ratio of the electron (C/kg)
 
     # Electric field strengths (V/m)
-    anode_field = 1900/anode_gap
+    anode_field = 1500/anode_gap
     cathode_field = 200 / cathode_gap
-    mcp_field = 1000 / mcp_gap
+    mcp_field = 1500 / mcp_gap
     print (F"mcp field {mcp_field}")
 
     # Acceleration due to the electric field (m/s^2)
@@ -45,6 +44,7 @@ def calculate_time(anode_gap, cathode_gap, mcp_gap, q_m,m):
     # Time to travel the distance (s)
     time_in_mcp = np.sqrt((2 * mcp_gap) / mcp_acc)
     print (F"time in mcp {time_in_mcp*1e9} ns")
+    
 
 
     energy = step_energy(0, mcp_acc, time_in_mcp,m)
@@ -57,11 +57,12 @@ def calculate_time(anode_gap, cathode_gap, mcp_gap, q_m,m):
     print (F"mcp to cathode {time_to_cathode*1e9} ns")
     time_to_mcp = np.sqrt((2 * cathode_gap) / e_cathode_acc)
     print (F"cathode to mcp {time_to_mcp*1e9} ns")
+    print (f"time for 180 bounce {time_to_mcp*2*1e9} ns")
     time_to_anode = np.sqrt((2 * anode_gap) / anode_acc) # electron time to anode (s)
     print (F"mcp to anode {time_to_anode}")
     time = time_to_cathode  + time_to_mcp   + 0.4e-9  + time_to_anode    # Time (seconds)
-
-    return time, time_in_mcp
+    print (F"total time {time*1e9} ns")
+    return time, time_in_mcp, time_to_cathode
 
 def read_data(filename):
     data = pd.read_csv(filename, comment='#', names=["1_to_10000", "events"], skiprows=6, dtype={"1_to_10000": int, "events": float})
@@ -80,20 +81,20 @@ def find_offset(data):
     print(f"peaks t0 {peak_positions * 1e9} ns")
     return peak_positions, peak_heights
 
-anode_gap = 5.15e-3
-cathode_gap = 0.431e-3 # between 0.2 mm and 0.5 mm calculated gap 0.295 mm
+anode_gap = 5.15e-3 # 5.15 mm
+cathode_gap = 0.313e-3 # between 0.2 mm and 0.5 mm calculated gap 0.295 mm / 0.431 mm
 mcp_gap = 460e-6 # 460 um photonis mcp value from datasheet
 mcp_bais_angle = 8 # degrees
 q_m_hydrogen = 9.58e7 
 
 Q_m = 9.58e7
-ions = [Q_m, Q_m / 5, Q_m / 8, Q_m / 10, Q_m / 12, Q_m / 18,  Q_m /56]
-ion_mass_in_ev = [938.272e6, 938.272e6*5, 7485.3e6, 9370.4e6, 11244.5e6, 16866.8e6,  52667.2e6]
+ions = [Q_m, Q_m / 4, Q_m / 8, Q_m / 10, Q_m / 12, Q_m / 18,  Q_m /56]
+ion_mass_in_ev = [938.272e6, 938.272e6*4, 7485.3e6, 9370.4e6, 11244.5e6, 16866.8e6,  52667.2e6]
 
 #divisors = list(range(1, 134))
 #ions = [Q_m / d for d in divisors]
 
-events_t0 = read_data('./Ion_feedback_data/F4--alex gas--ion-300k--00000.txt') # C3--alex gas--ion-300k--00000
+events_t0 = read_data('Ion_feedback_data/F4--alex gas--ion-300k--00000.txt') # C3--alex gas--ion-300k--00000
 print(len(events_t0))
 peak_positions_t0, peak_heights_t0 = find_offset(events_t0)
 plt.scatter(peak_positions_t0, peak_heights_t0, color='red', label='Data')
@@ -106,10 +107,10 @@ events_intital_data = read_data('./Ion_feedback_data/F4--alex gas--00000.txt')
 peak_positions_t0_intial, peak_heights_t0_intial = find_offset(events_intital_data)
 
 
-times, times_in_mcp = zip(*[(time * 1e9, time_in_mcp * 1e9) for time, time_in_mcp in [calculate_time(anode_gap, cathode_gap, mcp_gap, qm, mass) for qm, mass in zip(ions, ion_mass_in_ev)]])
+times, times_in_mcp, times_to_cathode = zip(*[(time * 1e9, time_in_mcp * 1e9, time_to_cathode*1e9) for time, time_in_mcp,time_to_cathode in [calculate_time(anode_gap, cathode_gap, mcp_gap, qm, mass) for qm, mass in zip(ions, ion_mass_in_ev)]])
 plot_time = np.array(times/times[0])
 
-for index, time_ns in enumerate(times_in_mcp):
+for index, time_ns in enumerate(times_to_cathode):
     print(f"mass {ion_mass_in_ev[index]/1e6:.1f} MeV/c^2: {time_ns} ns")
 
 ions_list = ['H+', 'He+','Li/Be+?', 'Li/Be+?', 'C+', 'H20+', 'Ga+']

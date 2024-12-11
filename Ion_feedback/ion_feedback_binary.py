@@ -5,10 +5,8 @@ from scipy.signal import find_peaks
 from joblib import Parallel, delayed
 import numpy as np
 import os
-#from scipy.ndimage import gaussian_filter1d
+from scipy.ndimage import gaussian_filter1d
 from matplotlib.colors import LogNorm
-
-
 
 
 def read_data_hist(filename):
@@ -21,8 +19,9 @@ def process_file(file_name):
     # Invert the voltage to find dips as peaks
     #voltage = gaussian_filter1d(voltage, sigma=20)
     voltage = -voltage
+    voltage = gaussian_filter1d(voltage, sigma=20)
     # Find the first significant peak (dip in original data)
-    peaks, _ = find_peaks(voltage, height=0.008,distance=50, prominence=0.008)
+    peaks, _ = find_peaks(voltage, height=0.01,distance=1200, prominence=0.01)
     peak_heights = voltage[peaks]
 
     peak_heights_dict = {i: height for i, height in enumerate(voltage[peaks]) if height < threshold}
@@ -35,31 +34,36 @@ def looking_at_peaks(file_names, i,j):
     waveform_voltages = []
     waveform_times = []
     plt.figure()
-
-
-
+    ion = 0
     for file_name in file_names[i:j]:
         time, voltage = read_data_hist(file_name)
 
-
+        
         voltage = -voltage
-        #voltage = gaussian_filter1d(voltage, sigma=20)
+        print (f"time {time[1]-time[0]}")
+        voltage = gaussian_filter1d(voltage, sigma=20)
         # Find the first significant peak (dip in original data)
-        peaks, _ = find_peaks(voltage, height=0.008,distance=50, prominence=0.008)
+        peaks, _ = find_peaks(voltage, height=0.005,distance=1200, prominence=0.005)
         peak_time = time[peaks]
         peak_positions = voltage[peaks]
         print (peak_time)
         peak_times = [time[i].astype(float) for i in peaks]
 
-        if len(peak_times) > 1 : #< 2e-9:
+        #if len(peak_times) == 0 : #< 2e-9:
+        #    plt.plot((time) * 1e9, voltage)
+
+        if len(peak_times) >=1 : #< 2e-9:
             #plt.plot((time-peak_times[0])*1e9, voltage)
             waveform_voltages.append(voltage)
             waveform_times.append((time-peak_times[0])*1e9)
-            #plt.plot((peak_time-peak_times[0])*1e9, peak_positions, 'x')
+            plt.plot((peak_time-peak_times[0])*1e9, peak_positions, 'x')
+            plt.plot((time-peak_times[0]) * 1e9, voltage)
+            ion += 1
         if len(peak_times) > 5:
             plt.plot((time) * 1e9, voltage)
             plt.plot((peak_time) * 1e9, peak_positions, 'x')
         #plt.xlim(-15, 50)
+    print(f"ion {ion}")
 
     plt.xlabel('Time [ns]')
     plt.ylabel('Voltage')
@@ -84,25 +88,25 @@ def looking_at_peaks(file_names, i,j):
 #file_name = "C:/Users/lexda/PycharmProjects/Photek_lab/Ion_feedback/Ion_feedback_data/10k-just-ion-13150210-10ns"
 #file_name = "C:/Users/lexda/PycharmProjects/Photek_lab/Ion_feedback/Ion_feedback_data/13150210-2.47-1.67-0.93-10k-10ns" # height=0.0008,distance=50, prominence=0.0008
 #file_name = "C:/Users/lexda/PycharmProjects/Photek_lab/Ion_feedback/Ion_feedback_data/new-trig-240-l-old-pmt"
-file_name = "C:/Users/lexda/PycharmProjects/Photek_lab/Ion_feedback/Ion_feedback_data/13150210-min-10-bi-ml"
+file_name = "C:/Users/lexda/local_pmt_info/characterisation/ion_feedback/ion-torch"
 
 
 
 trc_files = [os.path.join(file_name, f) for f in os.listdir(file_name) if f.endswith('.trc')]
 #trc_files = [os.path.join(file_name, f) for f in os.listdir(file_name) if f.endswith('.trc')][:7]
 
-results = Parallel(n_jobs=-1)(delayed(process_file)(file_name) for file_name in trc_files[0:10000])
+results = Parallel(n_jobs=-1)(delayed(process_file)(file_name) for file_name in trc_files[0:1000])
 looking_at_peaks(trc_files, 0, 1000)
 
 hist_peaks = [item for sublist in [result[0] for result in results] for item in sublist]
 num_peaks = [result[1] for result in results]
 peak_heights_dict = [result[2] for result in results]
-value = 1
+value = 2
 greater_numbers = [num for num in num_peaks if num > value]
 
 no_peaks = [num for num in num_peaks if num == 0]
 no_ions = [num for num in num_peaks if num == 1]
-ions = [num for num in num_peaks if num > 2]
+ions = [num for num in num_peaks if num >= 2]
 no_peak_size = len(no_peaks)
 no_ion_size = len(no_ions)
 ion_size = len(ions)
@@ -137,10 +141,11 @@ for peak_times in [result[0] for result in results]:
 # Plot histogram of time differences
 plt.figure(figsize=(10, 6))
 time_differences_array = np.array(time_differences)*1e9
-#hist_vals, bin_edges, _ = plt.hist(time_differences_array, bins=1000)
+hist_vals, bin_edges, _ = plt.hist(time_differences_array, bins=100)
 bin_width_ns = 0.33
-hist_vals, bin_edges, _ = plt.hist(time_differences_array, bins=np.arange(min(time_differences_array), max(time_differences_array), bin_width_ns),
-         align='left', alpha=0.5, label='time differences')
+print(f"test {time_differences_array}")
+#hist_vals, bin_edges, _ = plt.hist(time_differences_array, bins=np.arange(min(time_differences_array), max(time_differences_array), bin_width_ns),
+#         align='left', alpha=0.5, label='time differences')
 
 
 
@@ -154,18 +159,12 @@ print (f" peak bin centers {peak_bin_centers}")
 plt.plot(peak_bin_centers, peak_heights, 'x')
 
 #plt.yscale('log')
-plt.xlim(0,50 )
-print(np.array(time_differences) * 1e9)
-dif = np.array(time_differences) * 1e9
-np.savetxt('time_differences.csv', dif, delimiter=',')
+np.savetxt('time_differences.csv', time_differences_array, delimiter=',')
 plt.xlabel('Time Difference (ns)')
 plt.ylabel('Counts')
 plt.title('Histogram of Time Differences After First Peak')
 plt.savefig('time_differences_hist.png')
 print(f"number of time differences {len(time_differences)}")
-
-
-
 
 
 plt.figure()
