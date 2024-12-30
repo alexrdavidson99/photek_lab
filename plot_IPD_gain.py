@@ -66,6 +66,7 @@ for i, sig_f in enumerate(sig_files):
 
     # Locate the calibration file
     cal_f = list(folder_path.glob("IPD_CAL*.csv"))[0]
+    print(f"Calibration file: {cal_f}")
     cal = calibrate(cal_f)
 
     # Correct for inconsistent bin sizes between different IPD gain values
@@ -128,10 +129,7 @@ base_folders = [
 ]
 
 
-base_folders = [
-    "C:/Users/lexda/local_pmt_info/characterisation/2024-09-25 LPG650 PHD/Cathode_change_on_ipd/J_K11_P4_numbers_up"
-
-]
+base_folders = ["C:/Users/lexda/local_pmt_info/characterisation/rate-cap/full-pix-gain/"]
 
 # Recursively find all CSV files matching the pattern *SIG_*.csv #200_cathode_1340_MCP_3mins_int_35db
 sig_files = list(base_folder_path.glob("*1500v_MCP*.txt"))
@@ -144,7 +142,7 @@ counts_sig = []
 plt.figure()
 for base_folder in base_folders:
     base_folder_path = Path(base_folder)
-    sig_files = list(base_folder_path.rglob("*1500v_MCP*.txt"))
+    sig_files = list(base_folder_path.rglob("*SIG.csv"))
     for i, sig_f in enumerate(sig_files):
         parts = sig_f.stem.split("_")
         #y_pos = float(parts[2])
@@ -153,7 +151,7 @@ for base_folder in base_folders:
         #formatted_number = f"{number:.2f}"
 
         #position.append(y_pos)
-        chans, sig = np.loadtxt(sig_f, delimiter="\t", skiprows=3, unpack=True)
+        chans, sig = np.loadtxt(sig_f, delimiter=",", skiprows=1, unpack=True)
         sig *= gain_norm[gain][0]
         
         total_events = np.sum(sig)
@@ -165,14 +163,14 @@ for base_folder in base_folders:
         counts_sig.append(sum(sig)/int_time)
 
 
-        #dn_f = sig_f.with_name(sig_f.name.replace("SIG", "DN"))
-        #chans_df, df = np.loadtxt(dn_f, delimiter="\t", skiprows=3, unpack=True)
-        #df *= gain_norm[gain][0]
-        #counts_dn.append(sum(df)/int_time)
+        dn_f = sig_f.with_name(sig_f.name.replace("SIG", "DN"))
+        chans_df, df = np.loadtxt(dn_f, delimiter=",", skiprows=1, unpack=True)
+        df *= gain_norm[gain][0]
+        counts_dn.append(sum(df)/int_time)
 
 
         print(sum(sig)/5)
-        #counts.append(sum(sig)/int_time- sum(df)/int_time)
+        counts.append(sum(sig)/int_time- sum(df)/int_time)
         sub = sig 
         sub[sub < 0] = 0
        
@@ -180,7 +178,7 @@ for base_folder in base_folders:
         nom_sub = sub/sub_peak
         list_name = sig_f.name.split("_")
         print(list_name)
-        plt.plot(cal, nom_sub , lw = 1, label=f"{list_name[1]}")
+        plt.plot(cal, nom_sub[:-1] , lw = 1, label=f"{list_name[1]}")
         plt.xlabel("Gain (electrons)")
         plt.ylabel("N events")
         plt.xlim(0, 4e6)

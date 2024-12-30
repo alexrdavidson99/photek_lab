@@ -9,7 +9,7 @@ import pandas as pd
 import json
 from scipy.optimize import curve_fit
 from scipy.special import erf
-import mplhep
+#import mplhep
 import mpl_toolkits.mplot3d as plt3d
 #mplhep.style.use(mplhep.style.LHCb2)
 
@@ -58,6 +58,9 @@ positions_y = []
 residuals_sums = []
 gaussian_fits = {}
 fields = []
+target_x_positions = [83.17]
+target_y_positions = [91.15]
+colors = ['red', 'blue', 'green', 'purple']
 
 # Loop over fields
 for field in range(5, 9):
@@ -99,6 +102,32 @@ for field in range(5, 9):
         # Compute residuals and other statistics
         residuals = y_data - fitted_gaussian
         residuals_sum = np.sum(residuals[tails_mask])
+
+        if x in target_x_positions and y in target_y_positions:
+            
+            bin_centers = x_data
+            heights = y_data
+
+
+            bin_width = bin_centers[1] - bin_centers[0]  # Assume uniform bin width
+            bin_edges = np.concatenate([[bin_centers[0] - bin_width / 2],
+                                        bin_centers + bin_width / 2])
+
+            # Step 3: Create data to mimic histogram input
+            # For each bin, repeat the bin center value 'height' times
+            hist_data = np.repeat(bin_centers, heights.astype(int))
+
+            plt.hist(hist_data, bins=200, color=colors[field - 5], histtype='step', linewidth=1, label=f'Field {field} at x: {x}, y: {y}')
+
+            #plt.plot(x_data, fitted_gaussian, label='Fit')
+            plt.xlabel('[pWb]')
+            plt.ylabel('Counts')
+            plt.yscale('log')
+            plt.ylim(1, 1e4)
+            plt.xlim(-20, 1.5)
+            plt.title(f'Field {field} at x: {x}, y: {y}')
+            plt.legend()
+            
         
 
         # Append results
@@ -113,7 +142,6 @@ for field in range(5, 9):
             'stddev': stddev
         }
 
-
 # Save results to CSV
 residuals_df = pd.DataFrame({
     'x_position': positions_x,
@@ -123,6 +151,19 @@ residuals_df = pd.DataFrame({
 })
 
 residuals_df.to_csv('residuals_sums_data_with_xy.csv', index=False)
+
+
+# Define a tolerance for floating point comparison (optional)
+tolerance = 0.01  # Adjust based on your precision needs
+
+# Method 1: Using isin for exact matches
+filtered_df_exact = residuals_df[
+    residuals_df['x_position'].isin(target_x_positions) &
+    residuals_df['y_position'].isin(target_y_positions)
+]
+
+print(f"{filtered_df_exact} output")
+
 
 # Save Gaussian fits to JSON
 with open('gaussian_fits_with_xy.json', 'w') as f:
@@ -134,7 +175,7 @@ combined_y_positions = []
 combined_residuals_sums = []
 plt.figure(figsize=(14, 8))
 fig = plt.figure(figsize=(10, 6))
-for field in range(7, 8):
+for field in range(5, 9):
     # Select data corresponding to this field
     field_mask = np.array([f == f'F{field}' for f in fields])
     selected_x_positions = np.array(positions_x)[field_mask]
@@ -145,29 +186,27 @@ for field in range(7, 8):
     combined_x_positions.extend(np.array(positions_x)[field_mask])
     combined_y_positions.extend(np.array(positions_y)[field_mask])
     combined_residuals_sums.extend(np.array(residuals_sums)[field_mask])
+    selected_x_positions = np.where(selected_y_positions > 91.15, selected_x_positions + 0.55, selected_x_positions)
 
 
-    x_step_size = 0.2
-    y_step_size = 0.2
-    x_bins = np.arange(selected_x_positions.min(), selected_x_positions.max() + x_step_size, x_step_size)
-    y_bins = np.arange(selected_y_positions.min(), selected_y_positions.max() + y_step_size, y_step_size)
-    x_centers = (x_bins[:-1] + x_bins[1:]) / 2
-    y_centers = (y_bins[:-1] + y_bins[1:]) / 2
-    x,y = np.meshgrid(x_centers, y_centers)
-    H, xedges, yedges = np.histogram2d(selected_x_positions, selected_y_positions, bins=(x_bins, y_bins), weights=selected_residuals_sums)
+    # x_step_size = 0.2
+    # y_step_size = 0.2
+    # x_bins = np.arange(selected_x_positions.min(), selected_x_positions.max() + x_step_size, x_step_size)
+    # y_bins = np.arange(selected_y_positions.min(), selected_y_positions.max() + y_step_size, y_step_size)
+    # x_centers = (x_bins[:-1] + x_bins[1:]) / 2
+    # y_centers = (y_bins[:-1] + y_bins[1:]) / 2
+    # x,y = np.meshgrid(x_centers, y_centers)
+    # H, xedges, yedges = np.histogram2d(selected_x_positions, selected_y_positions, bins=(x_bins, y_bins), weights=selected_residuals_sums)
     
-    ax = fig.add_subplot(111, projection='3d')
-    X,Y = np.meshgrid(x_centers, y_centers)
-    ax.plot_surface(X, Y, H.T, cmap='viridis')
+    # ax = fig.add_subplot(111, projection='3d')
+    # X,Y = np.meshgrid(x_centers, y_centers)
+    # ax.plot_surface(X, Y, H.T, cmap='viridis')
     
-    #plt.scatter(selected_x_positions, selected_residuals_sums, label=f'Channel {field - 4}')
-    
-
-
+    plt.scatter(selected_x_positions, selected_residuals_sums, label=f'Channel {field - 4}')
     
 
-plt.xlabel('X Position')
-plt.ylabel('Y Position')
+plt.xlabel('X Position [mm]')
+plt.ylabel('Y Position [mm]')
 
 plt.title('Sum of Residuals vs Position in X and Y')
 
@@ -176,19 +215,23 @@ combined_x_positions = np.array(combined_x_positions)
 combined_y_positions = np.array(combined_y_positions)
 combined_residuals_sums = np.array(combined_residuals_sums)
 
-#plt.figure(figsize=(10, 6))
-# plt.hist2d(
-#     combined_x_positions,
-#     combined_y_positions,
-#     bins=[
-#         np.arange(combined_x_positions.min(), combined_x_positions.max() + x_step_size, x_step_size),
-#         np.arange(combined_y_positions.min(), combined_y_positions.max() + y_step_size, y_step_size)
-#     ],
-#     weights=combined_residuals_sums,
-#     cmap='viridis',
-   
-# )
 
+
+data_df = pd.read_csv(r"residuals_sums_data_with_xy.csv", delimiter=',', names=['x_position','y_position','residuals_sum','field'], skiprows=1)
+
+
+print(data_df.head())
+
+#plt.colorbar()
+
+
+
+
+x_center =  83.17
+filtered_data = data_df[data_df['y_position'] == x_center]
+plt.figure(figsize=(14, 8))
+plt.scatter(filtered_data['x_position'], filtered_data['residuals_sum'], s=10)
+print(data_df.head())
 
 plt.legend()
 plt.show()
