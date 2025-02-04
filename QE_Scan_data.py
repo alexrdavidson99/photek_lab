@@ -1,7 +1,10 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.colors import LogNorm
+from matplotlib.colors import LogNorm , Normalize
+from matplotlib.ticker import MultipleLocator, FormatStrFormatter
+import mplhep
+mplhep.style.use(mplhep.style.LHCb2)
 
 def qe_vs_x(scan_data, specific_y,x_max,date):
         filtered_data = scan_data[scan_data['Y'] == specific_y]
@@ -19,15 +22,18 @@ scan_data = pd.read_csv("C:/Users/lexda/Downloads/qe-scan-0.25-a11240313_alex_40
                          sep=',', comment="#" , names =[ 'X', 'Y', 'Timestamp', 'Dark', 'Signal', 'Subtraction'])
 
 
-step_size = 0.25
+step_size = 0.5
 
 
 
-#scan_data = pd.read_csv("C:/Users/lexda/Downloads/alex-0410_alex_405nm.csv",
-#                         sep=',', comment="#" , names =[ 'X', 'Y', 'Timestamp', 'Dark', 'Signal', 'Subtraction'])
+#scan_data = pd.read_csv("C:/Users/lexda/Downloads/A3241111_405nm.csv",
+#                          sep=',', comment="#" , names =[ 'X', 'Y', 'Timestamp', 'Dark', 'Signal', 'Subtraction'])
+#print(scan_data)
+
+
+scan_data = pd.read_csv("C:/Users/lexda/local_pmt_info/QE_A3241111/TMC-SQ_TMC-SQ_405nm.csv",
+                          sep=',', comment="#" , names =[ 'X', 'Y', 'Timestamp', 'Dark', 'Signal', 'Subtraction'])
 print(scan_data)
-
-
 
 x_min, x_max = scan_data['X'].min(), scan_data['X'].max()
 print(x_min, x_max)
@@ -48,16 +54,26 @@ print(y_bins)
 
 x_centered = np.abs(scan_data['X'] - x_max + step_size / 2)
 y_centered = np.abs(scan_data['Y'] - y_max + step_size / 2)
-plt.figure(figsize=(16, 8))
-plt.hist2d(y_centered , -x_centered, weights=scan_data['Subtraction'], bins=[x_bins, y_bins], cmap=plt.cm.viridis,norm=LogNorm(vmin=0.01, vmax=0.53))
+#plt.figure(figsize=(5.3, 3.24))
+plt.figure(figsize=(13, 9))
+norm = Normalize(vmin=0, vmax=0.16)
+plt.hist2d(y_centered , x_centered, weights=scan_data['Subtraction'], bins=[x_bins, y_bins], cmap=plt.cm.viridis,norm=LogNorm(vmin=0.01, vmax=0.53))
 plt.colorbar(label='photocurrent')
-plt.xlabel('x[mm]')
+plt.xlabel('x[mm]', fontsize=30)
 plt.ylabel('y[mm]')
-plt.xticks(np.arange(0, 60, step=2.5))
-plt.yticks(np.arange(-57.5, 0, step=2.5))
+plt.title('QE distribution ', fontsize=30)
+plt.xticks(np.arange(0, 60, step=10))
+plt.yticks(np.arange(0, 60, step=10))
+plt.gca().xaxis.set_major_formatter(FormatStrFormatter('%.0f'))
+plt.gca().yaxis.set_major_locator(MultipleLocator(10))
+plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.0f'))
+title = f'Photocurrent vs x and y'
+plt.fontsize = 300
+plt.savefig('Photocurrent_vs_x_and_y.png')
 
 #plt.axhline(y=specific_y - y_max + step_size / 2, color='red', linestyle='--', linewidth=2, label='1D Sample Position')
 plt.show()
+
 
 
 
@@ -73,4 +89,3 @@ z = scan_data['Subtraction'].values
 #plt.xlabel('x')
 #plt.ylabel('y')
 
-plt.show()

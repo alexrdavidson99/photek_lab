@@ -9,9 +9,9 @@ import pandas as pd
 import json
 from scipy.optimize import curve_fit
 from scipy.special import erf
-#import mplhep
+import mplhep
 import mpl_toolkits.mplot3d as plt3d
-#mplhep.style.use(mplhep.style.LHCb2)
+mplhep.style.use(mplhep.style.LHCb2)
 
 
 # Define the Gaussian function
@@ -58,7 +58,7 @@ positions_y = []
 residuals_sums = []
 gaussian_fits = {}
 fields = []
-target_x_positions = [83.17]
+target_x_positions = [83.56]
 target_y_positions = [91.15]
 colors = ['red', 'blue', 'green', 'purple']
 
@@ -117,15 +117,15 @@ for field in range(5, 9):
             # For each bin, repeat the bin center value 'height' times
             hist_data = np.repeat(bin_centers, heights.astype(int))
 
-            plt.hist(hist_data, bins=200, color=colors[field - 5], histtype='step', linewidth=1, label=f'Field {field} at x: {x}, y: {y}')
+            plt.hist(hist_data, bins=200, color=colors[field - 5], histtype='step', linewidth=1, label=f'pixel {field} at x: {x}, y: {y}')
 
             #plt.plot(x_data, fitted_gaussian, label='Fit')
-            plt.xlabel('[pWb]')
+            plt.xlabel('pwb [Vs]')
             plt.ylabel('Counts')
             plt.yscale('log')
             plt.ylim(1, 1e4)
             plt.xlim(-20, 1.5)
-            plt.title(f'Field {field} at x: {x}, y: {y}')
+            plt.title(f'PHD at x: {x}, y: {y}')
             plt.legend()
             
         

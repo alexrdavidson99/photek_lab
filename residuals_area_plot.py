@@ -52,10 +52,10 @@ def extract_xy_from_filename(filename):
     return None, None
 
 
-path_string = "C:/Users/lexda/local_pmt_info/characterisation/laser_sweeps/2d_sweep/89_hour_2D_week_end_scan"
+path_string = "C:/Users/lexda/local_pmt_info/characterisation/laser_sweeps/50_hour_scan/hist"
 DATA_DIR = Path(path_string)
-directory = DATA_DIR / '91.55y'
 
+directory = DATA_DIR 
 # Create directory and its parents if they don't exist
 os.makedirs(directory, exist_ok=True)
 
@@ -117,7 +117,7 @@ for field in range(5, 9):
 
         # Define the region around the mean that will be considered "central"
         
-        num_stddevs = 5 # Define the range, e.g., 2 standard deviations around the mean
+        num_stddevs = 2 # Define the range, e.g., 2 standard deviations around the mean
         lower_bound = mean - num_stddevs * abs(stddev)
         upper_bound = mean + num_stddevs * abs(stddev)
         #lower_bound =  -5.40
@@ -131,7 +131,7 @@ for field in range(5, 9):
 
         print("Area under the fitted Gaussian_1000 (numerical integration):", numerical_area)
         
-
+       
         plt.plot(x_data, hist_data['counts'], label='Histogram Data')
        
 
@@ -142,6 +142,8 @@ for field in range(5, 9):
         #        label='Residuals (Tails)', linestyle=':', color='red')
 
         residuals_sum = np.sum(residuals[tails_mask])
+        if residuals_sum > 1000:
+            plt.plot(x_data, hist_data['counts'], label='Histogram Data')
         
         mu = -np.log(numerical_area/total_sum)
         print("mu=",mu  )
@@ -195,12 +197,12 @@ for field in range(5, 9):
     selected_residuals_sums = np.array(residuals_sums)[field_mask]
     plt.scatter(selected_positions, selected_residuals_sums, marker='o', s=10, linestyle='-', label=f'channle {field-4}')
 
-    high_residuals_mask = selected_residuals_sums > 100
+    high_residuals_mask = selected_residuals_sums > 1000
     high_residuals_positions = selected_positions[high_residuals_mask]
     sum_residuals = selected_residuals_sums[high_residuals_mask]
     print(" len high_residuals_positions", len(high_residuals_positions))
     print(" len high_residuals_mask", len(high_residuals_mask))
-    #plt.scatter(high_residuals_positions, sum_residuals, marker='*', s=10, linestyle='-', label=f'channle {field-4}')
+    plt.scatter(high_residuals_positions, sum_residuals, marker='*', s=10, linestyle='-', label=f'channle {field-4}')
     
     #plt.hist2d(high_residuals_positions,sum_residuals, bins=[len(high_residuals_positions), 12], weights=sum_residuals, cmap='viridis')
     #plt.colorbar(label='Counts')
