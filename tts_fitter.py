@@ -6,6 +6,7 @@ from scipy.optimize import curve_fit
 from lhcb_style import apply_lhcb_style
 import mplhep
 mplhep.style.use(mplhep.style.LHCb2)
+plt.rcParams.update({'font.size': 10})
 
 
 
@@ -168,43 +169,60 @@ ax3.set_xlabel('time (ps)', fontsize=25, loc='left')
 ax3.set_ylabel('counts', fontsize=25)
 ax3.legend()
 
-plt.figure()
-voltages = [1400]
+
+plt.figure(figsize=(8.27, 5.5))
+plt.rcParams.update({'font.size': 11})
+voltages = [150]
 for i in voltages: 
-    pd_data = pd.read_csv(f"C:/Users/lexda/local_pmt_info/characterisation/tts/dark-box-2-tts-data/500v_back/first_sweep_cathode_voltage/F9--200v-cathode-{i}--mcp-high-counts-with-photo-d-hb-10k-00000--00000.csv"
+    #pd_data = pd.read_csv(f"C:/Users/lexda/local_pmt_info/characterisation/tts/dark-box-2-tts-data/500v_back/first_sweep_cathode_voltage/F9--{i}v-cathode-1500--mcp-high-counts-with-photo-d-hb-10k-00000--00000.csv" 
+    #                    ,names= ["time","amp"], skiprows=5 ) 
+    #pd_data["time"] = -pd_data["time"]*1e9
+    pd_data = pd.read_csv(f"C:/Users/lexda/local_pmt_info/characterisation/tts/dark-box-2-tts-data/500v_back/first_sweep_cathode_voltage/F9--{i}v-cathode-1450-mcp-with-photo-d-hb-10k-00000--00000.csv" 
                         ,names= ["time","amp"], skiprows=5 ) 
     pd_data["time"] = -pd_data["time"]*1e9
    
-    #pd_data["amp"] = pd_data["amp"]*1e9
-    plt.plot(pd_data["time"], pd_data["amp"], label =f"{i} volts" )
+    plt.plot(pd_data["time"], pd_data["amp"])
     #error, mean, amplitude
     expected = [0.1, -0.2, 275]
-    #bimodal(x, mu1, sigma1, A1, mu2, sigma2, A2)
+  
     expected = [0.05, -0.2, 275, 0.05, -0.1, 275]
-    #params, cov = curve_fit(gauss, pd_data['time'], pd_data['amp'], expected)
+    
     params_b, cov_b = curve_fit(bimodal, pd_data['time'], pd_data['amp'] )
     A1, sigma1, A2, sigma2 = params_b[2], params_b[1], params_b[5], params_b[4]
+    rms = np.sqrt((A1 * sigma1**2 + A2 * sigma2**2) / (A1 + A2))
+    mean_bimodal = (A1 * params_b[0] + A2 * params_b[3]) / (A1 + A2)
+    mean_data = np.average(pd_data["time"], weights=pd_data["amp"])
+    rms_full = np.sqrt(
+        np.sum(pd_data['amp'] * (pd_data['time'] - mean_data)**2)
+        / pd_data['amp'].sum()
+    )
+    print(f"rms_full {rms_full*1e3:.3f} ps")
+    print(f"rms {rms*1e3:.3f} ps")
+    print(f"printed prams {A1, sigma1, A2, sigma2}")
+    print(f"FWHM {sigma1*2.355*1e3:.3f} ps")
     sigma=np.sqrt(np.diag(cov))
-    print(f"Fwhm: {2.355*params[1]:.3e}")
+    print(f"Fwhm: {2.3548*params[1]:.3e}")
     print(f"printed prams {params}")
     x_fit = np.linspace(pd_data['time'].min(), pd_data['time'].max(), 500)
-    plt.plot(x_fit, bimodal(x_fit, *params_b), color='red', lw=3, label='model')
+    plt.plot(x_fit, bimodal(x_fit, *params_b), color='red', lw=3, label=fr'Double Gaussian Fit' )
     #plt.plot(x_fit, gauss(x_fit, *params), color='red', lw=1, ls="--", label='distribution 1')
     #plt.yscale('log')
     #plt.ylim(1e-1,1e3)
-    plt.xlim(-0.5,0.5)
-    plt.plot(x_fit, gauss(x_fit, *params_b[:3]), color='red', lw=1, ls="--", label=f'simga 1 {sigma1:.3e}')
-    plt.plot(x_fit, gauss(x_fit, *params_b[3:]), color='green', lw=1, ls=":", label=f'simga 2 {sigma2:.3e}', )
-    
+    plt.xlim(-0.7,0.8)
+    plt.plot(x_fit, gauss(x_fit, *params_b[:3]), color='red', lw=1, ls="--")  #label=fr'Primary  $\sigma_{{\text{{TTS}}}}$ {sigma1*1e3:.0f} ps')
+    plt.plot(x_fit, gauss(x_fit, *params_b[3:]), color='green', lw=1, ls=":") 
+    plt.plot([], [], ' ', label=Fr"$\sigma_{{\text{{RMS}}}}$: {rms_full*1e3:.0f} ps")
+    plt.plot([], [], ' ', label=Fr"$\sigma_{{\text{{TTS}}}}$ {sigma1*1e3:.0f} ps")
 
     
-
-plt.xlabel("Time [ns]")
-plt.ylabel("counts")
-plt.legend()
+plt.title(f'{i}V Across Cathode-MCP Gap', fontsize=22)
+plt.xlabel("Time [ns]",fontsize=30)
+plt.ylabel("counts",fontsize=30)
+plt.tick_params(axis='both', which='major', labelsize=18) 
+plt.legend(fontsize=25)
+#plt.tight_layout()
+plt.savefig(f"C:/Users/lexda/local_pmt_info/characterisation/tts/tts_data_cathode{i}v.pdf")
 plt.show()
 
 
 
-
-plt.show()

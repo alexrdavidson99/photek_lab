@@ -116,17 +116,18 @@ def electron_trajectory(target_distance, q_t, mass, initial_energy, theta_deg, v
 target_distance = 1550e-6  # Target distance in meters
 pore_length = 460e-6  # Pore length in meters   
 Q_t = 1.76e11  # Mass of electron in kg
-initial_energies = np.linspace(0, 1000, 10)  # in eV
-#initial_energies = [0,1,10,100,1000]  # in eV
 intital_energy_ion = 0
+initial_energies = np.linspace(intital_energy_ion, 1000, 2)
+print(f"energy {initial_energies}")  # in eV
+#initial_energies = [0,1,10,100,1000]  # in eV
 Q_m = 9.58e7
 ion_mass = 938.272e6  # Mass of proton in eV/c^2
-#ions = [Q_m,Q_m/2,Q_m/4,Q_m/8,Q_m/16,Q_m/32,Q_m/64]
-#ion_mass_in_ev = [ion_mass, ion_mass*2,ion_mass*4,ion_mass*8,ion_mass*16,ion_mass*32,ion_mass*64]
-ions = [Q_m]
-ion_mass_in_ev = [ion_mass]
+ions = [Q_m,Q_m/4,Q_m/8,Q_m/16,Q_m/32]
+ion_mass_in_ev = [ion_mass,ion_mass*4,ion_mass*8,ion_mass*16,ion_mass*32]
+#ions = [Q_m]
+#ion_mass_in_ev = [ion_mass]
 norm_ion_mass = [mass / 938.272e6 for mass in ion_mass_in_ev]
-voltages = [700]  # in V
+voltages = [200,500,700]  # in V
 times_by_energy_voltage = {energy: {voltage: [] for voltage in voltages} for energy in initial_energies}
 
 
@@ -152,7 +153,8 @@ for mass, charge_mass_ratio in zip(ion_mass_in_ev, ions):
                                                     f' int_en: {initial_energy} ev')
                 print(f"total time {t[-1]*1e9} ns")
                 t = t[-1]
-
+            if initial_energy == intital_energy_ion: 
+                xi, yi, ti = electron_trajectory(target_distance, charge_mass_ratio, mass, initial_energy, 0, voltage)
             xi = np.array(xi) * 1e3
             yi = np.array(yi) * 1e3
             total_t = ti[-1] + t
@@ -175,7 +177,8 @@ plt.ylabel('y position (mm)')
 plt.title('Electron Trajectories for Different Ion Masses,\n coming out at a 8 degree angle with [0,1,10,100,1000] ev')
 #plt.legend()
 plt.figure(figsize=(16, 8))
-colors = ['b', 'g', 'r','c','m','y','k']
+#colors = ['b', 'g', 'r','c','m','y','k']
+colors = ["#7ab6fe", "#faa776", "#82d3d6"]
 for energy, color in zip(initial_energies, colors):
     for idx, voltage in enumerate(voltages):
         plt.plot(norm_ion_mass, times_by_energy_voltage[energy][voltage], 'o-', color=colors[idx])
@@ -183,9 +186,7 @@ for energy, color in zip(initial_energies, colors):
 for idx, voltage in enumerate(voltages):
     min_times = np.min([times_by_energy_voltage[energy][voltage] for energy in initial_energies], axis=0)
     max_times = np.max([times_by_energy_voltage[energy][voltage] for energy in initial_energies], axis=0)
-    plt.fill_between(norm_ion_mass, min_times, max_times, color=colors[idx], alpha=0.2, label=f'{voltage} V')
-
-
+    plt.fill_between(norm_ion_mass, min_times, max_times, color=colors[idx], alpha=0.7, label=f'{voltage} V')
 
 
 plt.xlabel('Mass number')

@@ -1,70 +1,93 @@
 import lecroyparser
 import matplotlib.pyplot as plt
-#import pandas as pd
-from scipy.signal import find_peaks
+import pandas as pd
+from scipy.signal import find_peaks, savgol_filter
 from joblib import Parallel, delayed
 import numpy as np
 import os
+import re
 from scipy.ndimage import gaussian_filter1d
 from matplotlib.colors import LogNorm
+from scipy.signal import butter, filtfilt
+from numpy.fft import fft, fftfreq
 
+def high_pass_filter(data, cutoff, fs, order=1):
+    nyquist = 0.5 * fs
+    normal_cutoff = cutoff / nyquist
+    b, a = butter(order, normal_cutoff, btype='high', analog=False)
+    y = filtfilt(b, a, data)
+    return y
 
 def read_data_hist(filename):
     data = lecroyparser.ScopeData(filename)
+    print(f"filename {filename}")
     return data.x, data.y
 
 def process_file(file_name):
     time, voltage = read_data_hist(file_name)
-    threshold = 100
+    threshold = 1000
+
+    pattern = r'--(\d+)'  # Regular expression to extract the number after '--'
+    file_number = re.search(pattern, file_name)
+    
+    #fs = 1 / (time[1] - time[0])  # Sampling frequency
+    #cutoff = 1  # Cutoff frequency in Hz (20 GHz)
+    #voltage = high_pass_filter(voltage, cutoff, fs)
     # Invert the voltage to find dips as peaks
-    #voltage = gaussian_filter1d(voltage, sigma=20)
     voltage = -voltage
-    voltage = gaussian_filter1d(voltage, sigma=20)
+    voltage = gaussian_filter1d(voltage, sigma=5)
+    
     # Find the first significant peak (dip in original data)
-    peaks, _ = find_peaks(voltage, height=0.01,distance=1200, prominence=0.01)
+    peaks, _ = find_peaks(voltage, height=0.001,distance=1600, prominence=0.005)
     peak_heights = voltage[peaks]
+
+
 
     peak_heights_dict = {i: height for i, height in enumerate(voltage[peaks]) if height < threshold}
     peak_times = [time[i].astype(float) for i in peaks if voltage[i] < threshold]
 
-    return peak_times, len(peak_times), peak_heights_dict
+    return peak_times, len(peak_times), peak_heights_dict, file_number.group(1)
 
 
 def looking_at_peaks(file_names, i,j):
     waveform_voltages = []
     waveform_times = []
+    
+    
     plt.figure()
-    ion = 0
     for file_name in file_names[i:j]:
-        time, voltage = read_data_hist(file_name)
+        
+        time_c2, voltage_c2 = read_data_hist(file_name)
+        voltage_c2 = -voltage_c2
+        peaks_c2, _ = find_peaks(voltage_c2, height=0.001,distance=1600, prominence=0.005
+                                )
+        peak_time = time_c2[peaks_c2]
+        plt.plot((time_c2)*1e9, voltage_c2)
+        plt.plot((time_c2[peaks_c2]) * 1e9, voltage_c2[peaks_c2], 'x')
+
+            #smothing the data
+            #voltage_hp = savgol_filter(voltage, window_length=850, polyorder=6)
+            #voltage_guass = gaussian_filter1d(voltage_hp, sigma=5)
+            # Find the first significant peak (dip in original data)
+            
+
+            #if len(peak_times) ==1 : #< 2e-9:
+            #    plt.plot((time_c2-peak_times[0])*1e9, voltage_c2)
+            #    waveform_voltages.append(voltage_c2)
+            #    waveform_times.append((time_c2-peak_times[0])*1e9)
+            #    plt.plot(peak_time*1e9, peak_positions, 'x')
+            #    plt.plot(time_c2 * 1e9, voltage_c2)
+
+            # if len(peak_times) >=2 : #< 2e-9:
+            #     plt.plot((time_c2-peak_times[0])*1e9, voltage_c2)
+            #     waveform_voltages.append(voltage_c2)
+            #     waveform_times.append((time_c2-peak_times[0])*1e9)
+            #     plt.plot((peak_time-peak_times[0])*1e9, peak_positions, 'x')
+            #     plt.plot((time_c2-peak_times[0]) * 1e9, voltage_c2)
+                
+            #     ion += 1
 
         
-        voltage = -voltage
-        print (f"time {time[1]-time[0]}")
-        voltage = gaussian_filter1d(voltage, sigma=20)
-        # Find the first significant peak (dip in original data)
-        peaks, _ = find_peaks(voltage, height=0.005,distance=1200, prominence=0.005)
-        peak_time = time[peaks]
-        peak_positions = voltage[peaks]
-        print (peak_time)
-        peak_times = [time[i].astype(float) for i in peaks]
-
-        #if len(peak_times) == 0 : #< 2e-9:
-        #    plt.plot((time) * 1e9, voltage)
-
-        if len(peak_times) >=1 : #< 2e-9:
-            #plt.plot((time-peak_times[0])*1e9, voltage)
-            waveform_voltages.append(voltage)
-            waveform_times.append((time-peak_times[0])*1e9)
-            plt.plot((peak_time-peak_times[0])*1e9, peak_positions, 'x')
-            plt.plot((time-peak_times[0]) * 1e9, voltage)
-            ion += 1
-        if len(peak_times) > 5:
-            plt.plot((time) * 1e9, voltage)
-            plt.plot((peak_time) * 1e9, peak_positions, 'x')
-        #plt.xlim(-15, 50)
-    print(f"ion {ion}")
-
     plt.xlabel('Time [ns]')
     plt.ylabel('Voltage')
     plt.title('Waveforms with Peaks')
@@ -92,15 +115,18 @@ file_name = "C:/Users/lexda/local_pmt_info/characterisation/ion_feedback/ion-tor
 
 
 
+
 trc_files = [os.path.join(file_name, f) for f in os.listdir(file_name) if f.endswith('.trc')]
 #trc_files = [os.path.join(file_name, f) for f in os.listdir(file_name) if f.endswith('.trc')][:7]
 
-results = Parallel(n_jobs=-1)(delayed(process_file)(file_name) for file_name in trc_files[0:1000])
-looking_at_peaks(trc_files, 0, 1000)
+results = Parallel(n_jobs=-1)(delayed(process_file)(file_name) for file_name in trc_files[0:1057])
+looking_at_peaks(trc_files, 860, 867)
 
 hist_peaks = [item for sublist in [result[0] for result in results] for item in sublist]
 num_peaks = [result[1] for result in results]
 peak_heights_dict = [result[2] for result in results]
+
+file_numbers = [result[3] for result in results]
 value = 2
 greater_numbers = [num for num in num_peaks if num > value]
 
@@ -132,7 +158,19 @@ plt.ylabel('Frequency')
 plt.title('Histogram of Number of Peaks')
 
 time_differences = []
+first_peak_times = []
+file_numbers = []
+
+for result in results:  # Iterate over each result tuple
+    peak_times = result[0]  # Extract peak_times from the tuple
+    if len(peak_times) > 0:
+        #first_peak_times.append(float(peak_times[0]))  # Convert to raw float
+        file_numbers.append(result[3])  # Append the file number
+
 for peak_times in [result[0] for result in results]:
+    if len(peak_times) > 0:
+        first_peak_times.append(peak_times[0])
+        
     if len(peak_times) > 1:
         first_peak_time = peak_times[0]
         for subsequent_peak_time in peak_times[1:]:
@@ -210,3 +248,25 @@ plt.show()
     # plt.xlim(0, 50)
     # plt.show()
     # plt.savefig('binary_hist_plot.png')
+#df = pd.DataFrame({'file_numbers':file_numbers,'first_peak_times':first_peak_times})
+
+peak_data = []
+
+for result in results:
+    peak_times = result[0]  # list of peak times for this file
+    file_number = result[3]  # extracted from filename using regex
+    peak_data.append({
+        'file_number': file_number,
+        'peak_times': peak_times
+    })
+
+# Create DataFrame
+df_peak_times = pd.DataFrame(peak_data)
+
+# Optional: Convert lists to strings for cleaner CSV output
+df_peak_times['peak_times'] = df_peak_times['peak_times'].apply(lambda x: ','.join([f"{t:.10e}" for t in x]))
+
+# Save to CSV
+#df_peak_times.to_csv('peak_times_by_file.csv', index=False)
+
+#df.to_csv('ion_feedback_ion_times.csv', index=False)
