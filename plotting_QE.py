@@ -40,8 +40,8 @@ def read_data(filename):
     return qe_df, wavelengths
 
 for filename in args.filename:
-    old_filename = "C:/Users/lexda/Desktop/QE/QE_A1240515.txt"
-    qe_df, wavelengths = read_data(old_filename)
+    #old_filename = "C:/Users/lexda/Desktop/QE/QE_A1240515.txt"
+    qe_df, wavelengths = read_data("C:/Users/lexda/local_pmt_info/characterisation/QE/A1240515_QE_2025_2024.txt")
 
 
 
@@ -65,19 +65,22 @@ for filename in args.filename:
     max_qe = grouped_qe.max()
     min_qe = grouped_qe.min()
 
-    for day in max_qe.index:
+    #for day in max_qe.index:
 
-        plt.fill_between(wavelengths, min_qe.loc[day, wavelengths], max_qe.loc[day, wavelengths], label=f'{day.strftime("%d-%b-%y")}', alpha=0.35)
+        #plt.fill_between(wavelengths, min_qe.loc[day, wavelengths], max_qe.loc[day, wavelengths], label=f'{day.strftime("%d-%b-%y")}', alpha=0.35)
 
-    plt.xlabel('Wavelength (nm)')
-    plt.ylabel('Quantum Efficiency (%)')
-    plt.title('Quantum Efficiency vs. Wavelength')
+    plt.xlabel('Wavelength (nm)', fontsize=24)
+    plt.xticks(fontsize=20)
+    plt.yticks(fontsize=20)
+    plt.ylabel('Quantum Efficiency (%)' , fontsize=24)
+    plt.title('Quantum Efficiency vs. Wavelength', fontsize=26)
    # plt.text(0.05, 0.2, textstr, transform=plt.gca().transAxes, fontsize=14,
     #        verticalalignment='center', bbox=props)
     plt.text(0.80, 0.9, "Preliminary", transform=plt.gca().transAxes, fontsize=16,
             verticalalignment='center', bbox=props)
     plt.legend()
-    #plt.yscale('log')
+    plt.xlim(200, 800)
+    plt.yscale('log')
 
 
     plt.minorticks_on()
