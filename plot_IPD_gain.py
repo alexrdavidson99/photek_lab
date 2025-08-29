@@ -164,6 +164,14 @@ color_mapping = {
         "IK1": "red",
     }
 
+color_mapping = {
+        "52": "blue",
+        "53": "orange",
+        "54": "cyan",
+        "89": "green",
+        "91": "red",
+    }
+
 
 plt.figure()
 for base_folder in base_folders:
@@ -206,7 +214,8 @@ for base_folder in base_folders:
 
         print(sum(sig)/5)
         counts.append(sum(sig)/int_time- sum(df)/int_time)
-        sub = sig 
+        sub = sig - df
+        sub = sub / np.max(sub)
         sub[sub < 0] = 0
        
         sub_peak = np.max(sub)
@@ -217,18 +226,18 @@ for base_folder in base_folders:
         fit_x = np.linspace(0, 2.5e6, 1000)
         fit_y = gaus(fit_x, *popt)
         print(f"popt: {popt}")
-        #plt.plot(fit_x, fit_y, label=f"{voltage_value} {list_name[0]}")
-        
-        print(f"Votage {voltage_value} color: {color_mapping.get(voltage_value, 'black')}")
-        plt.plot(cal, nom_sub[:-1], lw=1, label=f"{voltage_value}")
-            #color=color_mapping.get(voltage_value, "black"))
-        
-        plt.xlabel("Gain (electrons)")
-        plt.ylabel("Normalised counts ")
-        plt.title(f"Normalised PHD vs. Gain for 2by48 pixels anode sections")
-        plt.yscale("log")
-        #plt.xlim(0, 2.5e6)
-        plt.legend()
+        if voltage_value in ["52","54", "53", "89", "91"]:
+            #plt.plot(fit_x, fit_y, label=f"{voltage_value} {list_name[0]}")
+            
+            #print(f"Votage {voltage_value} color: {color_mapping.get(voltage_value, 'black')}")
+            plt.plot(cal, nom_sub[:-1], lw=1, label=f"{voltage_value}" ,color=color_mapping.get(voltage_value, "black"))
+            
+            plt.xlabel("Gain (electrons)")
+            plt.ylabel("Normalised counts ")
+            plt.title(f"Normalised PHD vs. Gain for single pixels ")
+            #plt.yscale("log")
+            #plt.xlim(0, 2.5e6)
+            plt.legend()
 
 
 plt.gca().xaxis.set_label_coords(0.5, -0.1)  # Adjusts x label

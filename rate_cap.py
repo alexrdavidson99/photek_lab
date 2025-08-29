@@ -35,7 +35,7 @@ plt.xscale('log')
 #plt.xlim(1e-8, 0.5e-5)
 plt.ylim(0, rate_cap_y.max()+0.1)
 ax = plt.gca()
-#ax.xaxis.set_major_formatter(FuncFormatter(format_func))
+ax.xaxis.set_major_formatter(FuncFormatter(format_func))
 
 # Show plot
 plt.show()

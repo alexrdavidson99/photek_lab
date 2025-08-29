@@ -9,9 +9,9 @@ import pandas as pd
 import json
 from scipy.optimize import curve_fit
 from scipy.special import erf
-import mplhep
-import mpl_toolkits.mplot3d as plt3d
-mplhep.style.use(mplhep.style.LHCb2)
+#import mplhep
+#import mpl_toolkits.mplot3d as plt3d
+#mplhep.style.use(mplhep.style.LHCb2)
 
 
 # Define the Gaussian function
@@ -58,7 +58,7 @@ positions_y = []
 residuals_sums = []
 gaussian_fits = {}
 fields = []
-target_x_positions = [83.56]
+target_x_positions = [82.97] # 83.56, 83.17
 target_y_positions = [91.15]
 colors = ['red', 'blue', 'green', 'purple']
 
@@ -189,20 +189,20 @@ for field in range(5, 9):
     selected_x_positions = np.where(selected_y_positions > 91.15, selected_x_positions + 0.55, selected_x_positions)
 
 
-    # x_step_size = 0.2
-    # y_step_size = 0.2
-    # x_bins = np.arange(selected_x_positions.min(), selected_x_positions.max() + x_step_size, x_step_size)
-    # y_bins = np.arange(selected_y_positions.min(), selected_y_positions.max() + y_step_size, y_step_size)
-    # x_centers = (x_bins[:-1] + x_bins[1:]) / 2
-    # y_centers = (y_bins[:-1] + y_bins[1:]) / 2
-    # x,y = np.meshgrid(x_centers, y_centers)
-    # H, xedges, yedges = np.histogram2d(selected_x_positions, selected_y_positions, bins=(x_bins, y_bins), weights=selected_residuals_sums)
+    x_step_size = 0.2
+    y_step_size = 0.2
+    x_bins = np.arange(selected_x_positions.min(), selected_x_positions.max() + x_step_size, x_step_size)
+    y_bins = np.arange(selected_y_positions.min(), selected_y_positions.max() + y_step_size, y_step_size)
+    x_centers = (x_bins[:-1] + x_bins[1:]) / 2
+    y_centers = (y_bins[:-1] + y_bins[1:]) / 2
+    x,y = np.meshgrid(x_centers, y_centers)
+    H, xedges, yedges = np.histogram2d(selected_x_positions, selected_y_positions, bins=(x_bins, y_bins), weights=selected_residuals_sums)
     
-    # ax = fig.add_subplot(111, projection='3d')
-    # X,Y = np.meshgrid(x_centers, y_centers)
-    # ax.plot_surface(X, Y, H.T, cmap='viridis')
+    ax = fig.add_subplot(111, projection='3d')
+    X,Y = np.meshgrid(x_centers, y_centers)
+    ax.plot_surface(X, Y, H.T, cmap='viridis')
     
-    plt.scatter(selected_x_positions, selected_residuals_sums, label=f'Channel {field - 4}')
+    #plt.scatter(selected_x_positions, selected_residuals_sums, label=f'Channel {field - 4}')
     
 
 plt.xlabel('X Position [mm]')

@@ -54,8 +54,10 @@ def qe_vs_x(scan_data, specific_y,y_min,x_min,date):
         return 
 
 scan_data = pd.read_csv("C:/Users/lexda/Downloads/qe-scan-0.25-a11240313_alex_405nm.csv",
-                         sep=',', comment="#" , names =[ 'X', 'Y', 'Timestamp', 'Dark', 'Signal', 'Subtraction'])
+                       sep=',', comment="#" , names =[ 'X', 'Y', 'Timestamp', 'Dark', 'Signal', 'Subtraction'])
 
+#scan_data = pd.read_csv("C:/Users/lexda/Downloads/alex-torch-april_alex-torch-april_405nm.csv",
+#                         sep=',', comment="#" , names =[ 'X', 'Y', 'Timestamp', 'Dark', 'Signal', 'Subtraction'])
 
 #scan_data = pd.read_csv("C:/Users/lexda/local_pmt_info/QE_A3241111/A3241111_405nm.csv",
 #                          sep=',', comment="#" , names =[ 'X', 'Y', 'Timestamp', 'Dark', 'Signal', 'Subtraction'])
@@ -94,8 +96,8 @@ x_min, x_max = scan_data['X'].min(), scan_data['X'].max()
 y_min, y_max = scan_data['Y'].min(), scan_data['Y'].max()
 
 step_size = 0.5
-specific_y = 26.5+4.692
-specific_x = 21.727+3.3+3
+specific_y = 25.9
+specific_x = 53-(21.727+3.3+3)
 
 x_bins = int((x_max - x_min) / step_size)
 y_bins = int((y_max - y_min) / step_size)
@@ -131,8 +133,8 @@ x_centered = scan_data['X'] - x_min + step_size / 2
 y_centered = scan_data['Y'] - y_min + step_size / 2
 #plt.figure(figsize=(5.3, 3.24))
 plt.figure(figsize=(13, 9))
-norm = Normalize(vmin=0.4, vmax=0.7)
-plt.hist2d(y_centered , x_centered, weights=scan_data['Subtraction'], bins=[x_bins, y_bins], cmap=plt.cm.viridis, norm=norm)#LogNorm(vmin=0.01, vmax=0.2))
+norm = Normalize(vmin=0, vmax=0.6)
+plt.hist2d(y_centered , x_centered, weights=scan_data['Subtraction'], bins=[x_bins, y_bins], cmap=plt.cm.viridis, norm = norm ) #LogNorm(vmin=0.01, vmax=0.2))
 
 plt.colorbar(label='photocurrent')
 plt.xlabel('x[mm]', fontsize=30)
@@ -150,7 +152,7 @@ plt.savefig('Photocurrent_vs_x_and_y.png')
 plt.axhline(y=specific_y, color='red', linestyle='--', linewidth=2, label='1D Sample Position')
 plt.axvline(x=specific_x, color='red', linestyle='--', linewidth=2, label='1D Sample Position')
 
-plt.axhline(y=specific_y+9.9, color='red', linestyle='--', linewidth=2, label='1D Sample Position')
+plt.axhline(y=specific_y-9.9, color='red', linestyle='--', linewidth=2, label='1D Sample Position')
 plt.axvline(x=specific_x-3.3, color='red', linestyle='--', linewidth=2, label='1D Sample Position')
 plt.show()
 
