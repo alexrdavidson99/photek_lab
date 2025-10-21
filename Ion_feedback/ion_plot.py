@@ -4,6 +4,7 @@ import scipy.constants
 import pandas as pd
 import mplhep
 mplhep.style.use(mplhep.style.LHCb2)
+import pandas as pd
 
 
 
@@ -113,17 +114,17 @@ def electron_trajectory(target_distance, q_t, mass, initial_energy, theta_deg, v
 
 
 # Parameters
-target_distance = 1550e-6  # Target distance in meters
-pore_length = 460e-6  # Pore length in meters   
+target_distance = 335e-6  # Target distance in meters
+pore_length = 700e-6  # Pore length in meters   
 Q_t = 1.76e11  # Mass of electron in kg
 intital_energy_ion = 0
-initial_energies = np.linspace(intital_energy_ion, 1000, 2)
+initial_energies = np.linspace(intital_energy_ion, 1000, 2) #mcp voltage 1000v
 print(f"energy {initial_energies}")  # in eV
 #initial_energies = [0,1,10,100,1000]  # in eV
 Q_m = 9.58e7
 ion_mass = 938.272e6  # Mass of proton in eV/c^2
-ions = [Q_m,Q_m/4,Q_m/8,Q_m/16,Q_m/32]
-ion_mass_in_ev = [ion_mass,ion_mass*4,ion_mass*8,ion_mass*16,ion_mass*32]
+ions = [Q_m,Q_m/4,Q_m/8,Q_m/18,Q_m/37,Q_m/73]
+ion_mass_in_ev = [ion_mass,ion_mass*4,ion_mass*8,ion_mass*18,ion_mass*37, ion_mass*73]
 #ions = [Q_m]
 #ion_mass_in_ev = [ion_mass]
 norm_ion_mass = [mass / 938.272e6 for mass in ion_mass_in_ev]
@@ -140,7 +141,7 @@ for mass, charge_mass_ratio in zip(ion_mass_in_ev, ions):
             if initial_energy != intital_energy_ion:
                 # where 0 is the angle of the electric field in the pore and 8 is reffering 
                 # to the angle of field in the mcp gap relative to the pore
-
+                print(f"simulating ion coming out at 8 degrees with {initial_energy} ev")
                 x, y, t = electron_trajectory(pore_length/(1000/initial_energy), charge_mass_ratio, mass, intital_energy_ion,
                                             0, initial_energy)
                 
@@ -182,11 +183,23 @@ colors = ["#7ab6fe", "#faa776", "#82d3d6"]
 for energy, color in zip(initial_energies, colors):
     for idx, voltage in enumerate(voltages):
         plt.plot(norm_ion_mass, times_by_energy_voltage[energy][voltage], 'o-', color=colors[idx])
-        
+
+rows = []       
 for idx, voltage in enumerate(voltages):
     min_times = np.min([times_by_energy_voltage[energy][voltage] for energy in initial_energies], axis=0)
     max_times = np.max([times_by_energy_voltage[energy][voltage] for energy in initial_energies], axis=0)
     plt.fill_between(norm_ion_mass, min_times, max_times, color=colors[idx], alpha=0.7, label=f'{voltage} V')
+
+    for m, tmin, tmax in zip(norm_ion_mass, min_times, max_times):
+        rows.append({
+            "Voltage (V)": voltage,
+            "Mass number": m,
+            "TOF_min (ns)": tmin,
+            "TOF_max (ns)": tmax
+        })
+
+
+
 
 
 plt.xlabel('Mass number')
@@ -206,6 +219,24 @@ plt.ylabel('Counts')
 plt.title(f'Histogram of Time for Ion Mass 1u at  0-1000ev (10ev) steps')
 plt.yscale('log')
 plt.show()
+
+
+
+# Create DataFrame
+df_bounds = pd.DataFrame(rows)
+
+# Save to CSV
+output_filename = "tof_bounds_by_mass_voltage_335um.csv"
+df_bounds.to_csv(output_filename, index=False)
+
+print(f"✅ Time-of-flight bounds saved to '{output_filename}'")
+print(df_bounds.head())
+
+
+
+
+
+
 
 #paper_data = pd.read_csv('Ion_feedback_data/paper/mass_time_table.txt', sep=',', names=['Source', 'Ion',
 #                                        'Mass [kg]', 'Calculated time [μs]', 'Corresponding after-pulse group',

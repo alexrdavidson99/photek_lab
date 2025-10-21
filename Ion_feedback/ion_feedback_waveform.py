@@ -21,7 +21,7 @@ def process_file(file_name,i):
     threshold = 100
     # Invert the voltage to find dips as peaks
     voltage = -voltage
-    voltage = gaussian_filter1d(voltage, sigma=20)
+    #voltage = gaussian_filter1d(voltage, sigma=0)
     # Find the first significant peak (dip in original data)
     peaks, _ = find_peaks(voltage, height=0.0030, distance=350, prominence=0.001)
 
@@ -40,7 +40,7 @@ def looking_at_peaks(file_name,j,k):
         time, voltage = read_data_hist(f"{file_name}--{i:05}.txt")
 
         voltage = -voltage
-        voltage = gaussian_filter1d(voltage, sigma=20)
+        #voltage = gaussian_filter1d(voltage, sigma=0)
         # Find the first significant peak (dip in original data)
 
         peaks, _ = find_peaks(voltage, height=0.0030, distance=220, prominence=0.001)
@@ -69,7 +69,7 @@ def looking_at_peaks(file_name,j,k):
             area = (A * sigma * np.sqrt(2 * np.pi))/(50*1.6e-19)
             print(f"File {i}: Area under the Gaussian: {area}")
 
-            plt.plot(fit_time, fit_voltage, 'x', label='Selected Data for Fitting')
+            #plt.plot(fit_time, fit_voltage, 'x', label='Selected Data for Fitting')
 
             x_fit = np.linspace(min(fit_time), max(fit_time), 1000)
             y_fit = gaussian(x_fit, *popt)
@@ -83,10 +83,10 @@ def looking_at_peaks(file_name,j,k):
                 area_hist_photon_electrons.append(area)
             else:
                 area_hist_ion_electrons.append(area)
-            plt.vlines(0.1e-7, min(fit_voltage), max(fit_voltage), linestyles='dashed', label='Gaussian Fit')
-            plt.plot(x_fit, y_fit, '--', label='Gaussian Fit')
+            #plt.vlines(0.1e-7, min(fit_voltage), max(fit_voltage), linestyles='dashed', label='Gaussian Fit')
+           # plt.plot(x_fit, y_fit, '--', label='Gaussian Fit')
             plt.xlim(0, 0.3e-7)
-            plt.fill_between(x_fit, y_fit, alpha=0.5, color='orange', label='Area under Gaussian')
+           # plt.fill_between(x_fit, y_fit, alpha=0.5, color='orange', label='Area under Gaussian')
             plt.xlabel('Time')
             plt.ylabel('Voltage')
             plt.title(f'File {i}: Gaussian Fit with Area = {area:.2f}')
@@ -116,9 +116,10 @@ def looking_at_peaks(file_name,j,k):
     return waveform_voltages, wavefrom_times
 #file_name = "Ion_feedback_data/waveform/ion--waveform__back_up/C4--alex gas--700v-mcp--waveform"
 #file_name = "Ion_feedback_data/waveform_10k/ion-10k-wave-form/C4--alex gas--700v-mcp-10k--waveform"
-file_name = "Ion_feedback_data/10k-min-laser-bi/10k-min-laser-bi/C4--alex gas--700v-mcp-10k-min-laser--waveform--binary"
+#file_name = "Ion_feedback_data/10k-min-laser-bi/10k-min-laser-bi/C4--alex gas--700v-mcp-10k-min-laser--waveform--binary"
+file_name = r"C:/Users/lexda/PycharmProjects/Photek_lab/Ion_feedback/Ion_feedback_data/10k-min-laser-bi/10k-min-laser-bi/C4--alex gas--700v-mcp-10k-min-laser--waveform--binary"
 plt.figure(figsize=(20, 8))
-waveform_voltages, waveform_times = looking_at_peaks(file_name, 0, 100)
+waveform_voltages, waveform_times = looking_at_peaks(file_name, 0, 300)
 waveform_times = np.array(waveform_times).flatten()
 waveform_voltages = np.array(waveform_voltages).flatten()
 norm = LogNorm(vmin=1, vmax=500)

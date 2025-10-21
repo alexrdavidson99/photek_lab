@@ -6,6 +6,8 @@ from joblib import Parallel, delayed
 import numpy as np
 import os
 import re
+import mplhep
+mplhep.style.use(mplhep.style.LHCb2)
 from scipy.ndimage import gaussian_filter1d
 from matplotlib.colors import LogNorm
 from scipy.signal import butter, filtfilt
@@ -38,7 +40,7 @@ def process_file(file_name):
     voltage = gaussian_filter1d(voltage, sigma=5)
     
     # Find the first significant peak (dip in original data)
-    peaks, _ = find_peaks(voltage, height=0.001,distance=1600, prominence=0.005)
+    peaks, _ = find_peaks(voltage, height=0.0008,distance=50, prominence=0.0008)
     peak_heights = voltage[peaks]
 
 
@@ -58,12 +60,12 @@ def looking_at_peaks(file_names, i,j):
     for file_name in file_names[i:j]:
         
         time_c2, voltage_c2 = read_data_hist(file_name)
-        voltage_c2 = -voltage_c2
-        peaks_c2, _ = find_peaks(voltage_c2, height=0.001,distance=1600, prominence=0.005
-                                )
+        voltage_c2 = voltage_c2
+        peaks_c2, _ = find_peaks(voltage_c2, height=0.0008,distance=50, prominence=0.0008
+                                ) # height=0.0008,distance=50, prominence=0.0008  #height=0.001,distance=1600, prominence=0.005
         peak_time = time_c2[peaks_c2]
-        plt.plot((time_c2)*1e9, voltage_c2)
-        plt.plot((time_c2[peaks_c2]) * 1e9, voltage_c2[peaks_c2], 'x')
+        plt.plot((time_c2)*1e9, voltage_c2 *1e3)
+        #plt.plot((time_c2[peaks_c2]) * 1e9, voltage_c2[peaks_c2], 'x')
 
             #smothing the data
             #voltage_hp = savgol_filter(voltage, window_length=850, polyorder=6)
@@ -88,14 +90,15 @@ def looking_at_peaks(file_names, i,j):
             #     ion += 1
 
         
-    plt.xlabel('Time [ns]')
-    plt.ylabel('Voltage')
+    plt.xlabel('Time (ns)')
+    plt.ylabel('Voltage (mV)')
     plt.title('Waveforms with Peaks')
     plt.savefig('binary_plot.png')
     plt.figure()
     waveform_times = np.array(waveform_times).flatten()
     waveform_voltages = np.array(waveform_voltages).flatten()
     print (f"waveform times {waveform_times}")
+
     norm = LogNorm(vmin=1, vmax=500)
     # Create a 2D histogram of the data
     plt.hist2d(waveform_times, -waveform_voltages, bins=[500, 100], norm=norm, cmap='viridis')
@@ -109,18 +112,18 @@ def looking_at_peaks(file_names, i,j):
 #file_name = "C:/Users/lexda/PycharmProjects/Photek_lab/Ion_feedback/Ion_feedback_data/wave-form-100k/"
 #file_name = "C:/Users/lexda/PycharmProjects/Photek_lab/Ion_feedback/Ion_feedback_data/13150210-min-10-bi-ml/"
 #file_name = "C:/Users/lexda/PycharmProjects/Photek_lab/Ion_feedback/Ion_feedback_data/10k-just-ion-13150210-10ns"
-#file_name = "C:/Users/lexda/PycharmProjects/Photek_lab/Ion_feedback/Ion_feedback_data/13150210-2.47-1.67-0.93-10k-10ns" # height=0.0008,distance=50, prominence=0.0008
+file_name = "C:/Users/lexda/PycharmProjects/Photek_lab/Ion_feedback/Ion_feedback_data/13150210-2.47-1.67-0.93-10k-10ns" # height=0.0008,distance=50, prominence=0.0008
 #file_name = "C:/Users/lexda/PycharmProjects/Photek_lab/Ion_feedback/Ion_feedback_data/new-trig-240-l-old-pmt"
-file_name = "C:/Users/lexda/local_pmt_info/characterisation/ion_feedback/ion-torch"
+#file_name = "C:/Users/lexda/local_pmt_info/characterisation/ion_feedback/ion-torch"
 
 
 
 
-trc_files = [os.path.join(file_name, f) for f in os.listdir(file_name) if f.endswith('.trc')]
-#trc_files = [os.path.join(file_name, f) for f in os.listdir(file_name) if f.endswith('.trc')][:7]
+#trc_files = [os.path.join(file_name, f) for f in os.listdir(file_name) if f.endswith('.trc')]
+trc_files = [os.path.join(file_name, f) for f in os.listdir(file_name) if f.endswith('.trc')][:9999]
 
-results = Parallel(n_jobs=-1)(delayed(process_file)(file_name) for file_name in trc_files[0:1057])
-looking_at_peaks(trc_files, 860, 867)
+results = Parallel(n_jobs=-1)(delayed(process_file)(file_name) for file_name in trc_files[0:9999])
+looking_at_peaks(trc_files, 0, 99)
 
 hist_peaks = [item for sublist in [result[0] for result in results] for item in sublist]
 num_peaks = [result[1] for result in results]
@@ -179,13 +182,20 @@ for peak_times in [result[0] for result in results]:
 # Plot histogram of time differences
 plt.figure(figsize=(10, 6))
 time_differences_array = np.array(time_differences)*1e9
-hist_vals, bin_edges, _ = plt.hist(time_differences_array, bins=100)
+hist_vals, bin_edges, _ = plt.hist(time_differences_array, bins=1000)
 bin_width_ns = 0.33
 print(f"test {time_differences_array}")
 #hist_vals, bin_edges, _ = plt.hist(time_differences_array, bins=np.arange(min(time_differences_array), max(time_differences_array), bin_width_ns),
 #         align='left', alpha=0.5, label='time differences')
-
-
+# save histogram data
+bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+df_hist = pd.DataFrame({
+    'bin_center_ns': bin_centers,
+    'left_edge_ns': bin_edges[:-1],
+    'right_edge_ns': bin_edges[1:],
+    'count': hist_vals
+})
+df_hist.to_csv('time_differences_hist_13150210.csv', index=False)
 
 hist_peaks, _ = find_peaks(hist_vals, height=100, distance=7, prominence=8)
 
@@ -197,9 +207,10 @@ print (f" peak bin centers {peak_bin_centers}")
 plt.plot(peak_bin_centers, peak_heights, 'x')
 
 #plt.yscale('log')
-np.savetxt('time_differences.csv', time_differences_array, delimiter=',')
+np.savetxt('time_differences_13150210.csv', time_differences_array, delimiter=',')
 plt.xlabel('Time Difference (ns)')
 plt.ylabel('Counts')
+plt.xlim(0, 50)
 plt.title('Histogram of Time Differences After First Peak')
 plt.savefig('time_differences_hist.png')
 print(f"number of time differences {len(time_differences)}")

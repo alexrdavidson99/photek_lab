@@ -9,7 +9,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import find_peaks, savgol_filter
 import mplhep
+import os
 mplhep.style.use(mplhep.style.LHCb2)
+
 
 
 
@@ -32,7 +34,7 @@ def plot_saved_hist(hist_time, counts,time):
     plt.bar(hist_time, counts, width=(hist_time[1] - hist_time[0]), align='center', label=f"{time}")
     plt.xlabel('Time')
     plt.ylabel('Counts')
-    plt.title('afterpulse distribution')
+    #plt.title('Afterpulse distribution')
     plt.legend()
 
 file_string = "C:/Users/lexda/local_pmt_info/characterisation/ion_feedback/hist/"
@@ -44,9 +46,9 @@ file_list = [#"afternoon/F2--ion-torch-with-iamge-d--hist-5.5k-700cath-1450-mcp-
               "ion-cathode-sweep/F2--ion-torch-with-iamge-d--hist-1.5k-200cath-1450-mcp-1500-back.txt",
               #"ion-cathode-sweep/F2--ion-torch-with-iamge-d--hist-1.5k-300cath-1450-mcp-1500-back.txt",
               #"ion-cathode-sweep/F2--ion-torch-with-iamge-d--hist-1.5k-400cath-1450-mcp-1500-back.txt",
-            #  "ion-cathode-sweep/F2--ion-torch-with-iamge-d--hist-1.5k-500cath-1450-mcp-1500-back.txt",
+              "ion-cathode-sweep/F2--ion-torch-with-iamge-d--hist-1.5k-500cath-1450-mcp-1500-back.txt",
              #   "ion-cathode-sweep/F2--ion-torch-with-iamge-d--hist-1.5k-600cath-1450-mcp-1500-back.txt",
-            #"ion-cathode-sweep/F2--ion-torch-with-iamge-d--hist-1.5k-700cath-1450-mcp-1500-back.txt",
+            "ion-cathode-sweep/F2--ion-torch-with-iamge-d--hist-1.5k-700cath-1450-mcp-1500-back.txt",
             # "long_width/F2--ion-torch-with-iamge-d--hist-1.5k-700cath-1450-mcp-1500-back-long--1800ns.txt",
             # "long_width/F2--ion-torch-with-iamge-d--hist-1.5k-700cath-1450-mcp-1500-back-long--740ns.txt",
              ]
@@ -74,11 +76,54 @@ for file in file_list:
     print(cathode_voltage)
     plot_hist(pd_data_hits, cathode_voltage)
 
+csv_path = r"c:\Users\lexda\PycharmProjects\Photek_lab\tof_bounds_by_mass_voltage.csv"
+# for 13150210 
+csv_path = r"c:\Users\lexda\PycharmProjects\Photek_lab\tof_bounds_by_mass_voltage_335um.csv"
+old_pmt = r"C:/Users/lexda/PycharmProjects/Photek_lab/time_differences_hist_13150210_works.csv"
+old_pmt_data = pd.read_csv(old_pmt)
+plt.figure()
+plt.bar(old_pmt_data['bin_center_ns'], old_pmt_data['count'], width=(old_pmt_data['right_edge_ns'] - old_pmt_data['left_edge_ns']), align='center', alpha=0.5, label="13150 PMT")   
+
+df_bounds = pd.read_csv(csv_path)
+
+# choose the normalized mass to match (change if needed)
+mass_to_match = [1.0, 4.0, 18.0,37,73]  # H2+ and H2O+
+
+ymin = 0
+ymax = 700
+
+vol_colors = {200: "#f17354"}
+for m in mass_to_match:
+    for volt, color in vol_colors.items():
+        row = df_bounds[(df_bounds["Voltage (V)"] == volt) & (df_bounds["Mass number"] == m)]
+        if not row.empty:
+            tof_min = float(row["TOF_min (ns)"].values[0])
+            tof_max = float(row["TOF_max (ns)"].values[0])
+            plt.vlines([tof_min, tof_max], ymin=ymin, ymax=ymax, colors=color,
+                       linestyles='dashed', label=fr'Time range m={m}, {volt}V')
+
+# draw min/max TOF lines for each voltage
+#vol_colors = {200: "#5ba7ff", 500: "#ff8d40", 700: "#61dfe6"}
+# for volt, color in vol_colors.items():
+#     row = df_bounds[(df_bounds["Voltage (V)"] == volt) & (df_bounds["Mass number"] == mass_to_match)]
+#     if not row.empty:
+#         tof_min = float(row["TOF_min (ns)"].values[0])
+#         tof_max = float(row["TOF_max (ns)"].values[0])
+#         plt.vlines([tof_min, tof_max], ymin=ymin, ymax=ymax, colors=color,
+#                    linestyles='dashed', label=fr'Time range $\mathrm{{H_2O^+}}$ {volt}V')
+
 plt.xlabel("Time [ns]")
 plt.ylabel("counts")
-plt.title("Afterpulse distribution for different cathode-MCP gap voltages")
+#plt.title("Afterpulse distribution for different cathode-MCP gap voltages")
+
+save_dir = r"C:/Users/lexda/PycharmProjects/Photek_lab/Ion_feedback/plots"
+
+
+os.makedirs(save_dir, exist_ok=True)
+
 #plt.yscale('log')
-plt.legend()
+plt.legend(fontsize=16.5)
+plt.savefig(os.path.join(save_dir, "afterpulse_cathode_sweep.png"), dpi=300)
 plt.figure()
 for file in file_list_hist:
     filename = file_string + file
