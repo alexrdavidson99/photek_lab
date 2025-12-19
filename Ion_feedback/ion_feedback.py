@@ -78,42 +78,65 @@ for file in file_list:
 
 csv_path = r"c:\Users\lexda\PycharmProjects\Photek_lab\tof_bounds_by_mass_voltage.csv"
 # for 13150210 
-csv_path = r"c:\Users\lexda\PycharmProjects\Photek_lab\tof_bounds_by_mass_voltage_335um.csv"
-old_pmt = r"C:/Users/lexda/PycharmProjects/Photek_lab/time_differences_hist_13150210_works.csv"
-old_pmt_data = pd.read_csv(old_pmt)
-plt.figure()
-plt.bar(old_pmt_data['bin_center_ns'], old_pmt_data['count'], width=(old_pmt_data['right_edge_ns'] - old_pmt_data['left_edge_ns']), align='center', alpha=0.5, label="13150 PMT")   
+#csv_path = r"c:\Users\lexda\PycharmProjects\Photek_lab\tof_bounds_by_mass_voltage_335um.csv"
+# old_pmt = r"C:/Users/lexda/PycharmProjects/Photek_lab/time_differences_hist_13150210_works.csv"
+# old_pmt_data = pd.read_csv(old_pmt)
+# plt.figure(figsize=(14, 7))
+# plt.bar(old_pmt_data['bin_center_ns'], old_pmt_data['count'], width=(old_pmt_data['right_edge_ns'] - old_pmt_data['left_edge_ns']), align='center', alpha=0.5, label="13150210 PMT")   
 
 df_bounds = pd.read_csv(csv_path)
 
 # choose the normalized mass to match (change if needed)
-mass_to_match = [1.0, 4.0, 18.0,37,73]  # H2+ and H2O+
+mass_to_match = 18.0  # H2+ and H2O+
+
+
+# mass_labels = {
+#     1.0:  r'$\mathrm{H^+}$', 
+#     4.0:  r'$\mathrm{He^+}$',
+#     18.0: r'$\mathrm{H_2O^+}$',
+#     37.0: r'Heavy ion',  # example fragment (adjust as needed)
+#     73.0: r'Heavy ion',  # example fragment (adjust as needed)
+# }
+#mass_colors = {1.0: "#ff0000", 4.0: "#ffa500", 18.0: "#0000ff", 37.0: "#615994", 73.0: "#800080"}
+#mass_colors = {
+#     1.0: "#1D56E5",   # deep orange-red
+#     4.0: "#348ABD",   # soft blue
+#     18.0: "#997AE7",  # lavender
+#     37.0: "#615994",  # neutral gray
+#     73.0: "#800080",  # warm yellow-orange
+# }
+
+
 
 ymin = 0
-ymax = 700
+ymax = 400
 
-vol_colors = {200: "#f17354"}
-for m in mass_to_match:
-    for volt, color in vol_colors.items():
-        row = df_bounds[(df_bounds["Voltage (V)"] == volt) & (df_bounds["Mass number"] == m)]
-        if not row.empty:
-            tof_min = float(row["TOF_min (ns)"].values[0])
-            tof_max = float(row["TOF_max (ns)"].values[0])
-            plt.vlines([tof_min, tof_max], ymin=ymin, ymax=ymax, colors=color,
-                       linestyles='dashed', label=fr'Time range m={m}, {volt}V')
+#vol_colors = {200: "#f17354"}
+# for m in mass_to_match:
+#     for volt, color in vol_colors.items():
+#         row = df_bounds[(df_bounds["Voltage (V)"] == volt) & (df_bounds["Mass number"] == m)]
+#         ion_label = mass_labels.get(m, f"m={m}")
+#         ion_color = mass_colors.get(m, f"m={m}")
+#         if not row.empty:
+#             tof_min = float(row["TOF_min (ns)"].values[0])
+#             tof_max = float(row["TOF_max (ns)"].values[0])
+#             plt.vlines([tof_min, tof_max], ymin=ymin, ymax=ymax, colors=ion_color,
+#                        linestyles='dashed', label=fr'Time range for {ion_label}')
+#plt.xlim(-1, 49)
 
 # draw min/max TOF lines for each voltage
-#vol_colors = {200: "#5ba7ff", 500: "#ff8d40", 700: "#61dfe6"}
-# for volt, color in vol_colors.items():
-#     row = df_bounds[(df_bounds["Voltage (V)"] == volt) & (df_bounds["Mass number"] == mass_to_match)]
-#     if not row.empty:
-#         tof_min = float(row["TOF_min (ns)"].values[0])
-#         tof_max = float(row["TOF_max (ns)"].values[0])
-#         plt.vlines([tof_min, tof_max], ymin=ymin, ymax=ymax, colors=color,
-#                    linestyles='dashed', label=fr'Time range $\mathrm{{H_2O^+}}$ {volt}V')
+vol_colors = {200: "#5ba7ff", 500: "#ff8d40", 700: "#61dfe6"}
+for volt, color in vol_colors.items():
+    row = df_bounds[(df_bounds["Voltage (V)"] == volt) & (df_bounds["Mass number"] == mass_to_match)]
+    
+    if not row.empty:
+        tof_min = float(row["TOF_min (ns)"].values[0])
+        tof_max = float(row["TOF_max (ns)"].values[0])
+        plt.vlines([tof_min, tof_max], ymin=ymin, ymax=ymax, colors=color,
+                   linestyles='dashed', label=fr'Time range $\mathrm{{H_2O^+}}$ {volt}V')
 
 plt.xlabel("Time [ns]")
-plt.ylabel("counts")
+plt.ylabel("Counts")
 #plt.title("Afterpulse distribution for different cathode-MCP gap voltages")
 
 save_dir = r"C:/Users/lexda/PycharmProjects/Photek_lab/Ion_feedback/plots"

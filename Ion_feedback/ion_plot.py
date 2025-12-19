@@ -2,8 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.constants
 import pandas as pd
-import mplhep
-mplhep.style.use(mplhep.style.LHCb2)
+#import mplhep
+#mplhep.style.use(mplhep.style.LHCb2)
 import pandas as pd
 
 
@@ -114,21 +114,24 @@ def electron_trajectory(target_distance, q_t, mass, initial_energy, theta_deg, v
 
 
 # Parameters
-target_distance = 335e-6  # Target distance in meters
+target_distance = 1550e-6  # Target distance in meters
 pore_length = 700e-6  # Pore length in meters   
 Q_t = 1.76e11  # Mass of electron in kg
 intital_energy_ion = 0
 initial_energies = np.linspace(intital_energy_ion, 1000, 2) #mcp voltage 1000v
 print(f"energy {initial_energies}")  # in eV
-#initial_energies = [0,1,10,100,1000]  # in eV
+initial_energies = [0,1,10,100,1000] 
+initial_energies = [0]# in eV
+initial_energies_colors = {0: "#000000", 1: "#7f7f7f", 10: "#ff0000", 100: "#00ff00", 1000: "#0000ff"}
 Q_m = 9.58e7
 ion_mass = 938.272e6  # Mass of proton in eV/c^2
 ions = [Q_m,Q_m/4,Q_m/8,Q_m/18,Q_m/37,Q_m/73]
 ion_mass_in_ev = [ion_mass,ion_mass*4,ion_mass*8,ion_mass*18,ion_mass*37, ion_mass*73]
-#ions = [Q_m]
-#ion_mass_in_ev = [ion_mass]
+ions = [Q_m]
+ion_mass_in_ev = [ion_mass]
 norm_ion_mass = [mass / 938.272e6 for mass in ion_mass_in_ev]
-voltages = [200,500,700]  # in V
+#voltages = [200,500,700]  # in V
+voltages = [200]  # in V
 times_by_energy_voltage = {energy: {voltage: [] for voltage in voltages} for energy in initial_energies}
 
 
@@ -150,8 +153,8 @@ for mass, charge_mass_ratio in zip(ion_mass_in_ev, ions):
                 x_rotated = np.array(x_rotated-x_rotated[-1]) * 1e3
                 y_rotated = np.array(y_rotated-pore_length/(1000/initial_energy)) * 1e3
 
-                plt.plot(x_rotated, y_rotated, label=f'{mass / 1e6:.1f} MeV/c^2, t_o_f in pore: {t[-1] / 1e-9:.4f},'
-                                                    f' int_en: {initial_energy} ev')
+                plt.plot(x_rotated, y_rotated, color = initial_energies_colors[initial_energy] ) #label=f'{mass / 1e6:.1f} MeV/c^2, t_o_f in pore: {t[-1] / 1e-9:.4f},'
+                                                #    f' int_en: {initial_energy} ev')
                 print(f"total time {t[-1]*1e9} ns")
                 t = t[-1]
             if initial_energy == intital_energy_ion: 
@@ -165,8 +168,9 @@ for mass, charge_mass_ratio in zip(ion_mass_in_ev, ions):
                 print(f"this was from the bottom of the pore, then took {ti[-1]*1e9} ns to get to the top")
 
             print(f"total time {total_t*1e9} ns")
-            plt.plot(xi, yi, label=f'{mass / 1e6:.1f} MeV/c^2, t_o_f: {ti[-1] / 1e-9:.4f}'
-                                f', int_en: {initial_energy} ev')
+            #plt.plot(xi, yi, label=f'{mass / 1e6:.1f} MeV/c^2, t_o_f: {ti[-1] / 1e-9:.4f}'
+            #                    f', int_en: {initial_energy} ev')
+            plt.plot(xi, yi, color=initial_energies_colors[initial_energy], alpha=0.5, label=f'Ion energy leaving pore: {initial_energy} ev')
             times_by_energy_voltage[initial_energy][voltage].append(total_t * 1e9)
 
 
@@ -175,9 +179,15 @@ plt.ylabel('y position (mm)')
 
 
 # Title and Legend
-plt.title('Electron Trajectories for Different Ion Masses,\n coming out at a 8 degree angle with [0,1,10,100,1000] ev')
-#plt.legend()
+#plt.title('Electron Trajectories for Different Ion Masses,\n coming out at a 8 degree angle with [0,1,10,100,1000] ev')
+plt.hlines(0, xmin=-0.15, xmax=0.23, colors='k', linestyles='dashed')
+plt.hlines(1.55, xmin=-0.15, xmax=0.23, colors='k', linestyles='dashed')   
+plt.text(0.16, -0.11, 'MCP Surface', fontsize=22)
+plt.text(0.16, target_distance*1e3 + 0.02, 'Cathode Surface', fontsize=22)          
+plt.legend(loc='lower right', fontsize=19)
+plt.ylim(-0.85, 1.73)
 plt.figure(figsize=(16, 8))
+
 #colors = ['b', 'g', 'r','c','m','y','k']
 colors = ["#7ab6fe", "#faa776", "#82d3d6"]
 for energy, color in zip(initial_energies, colors):
@@ -202,10 +212,11 @@ for idx, voltage in enumerate(voltages):
 
 
 
-plt.xlabel('Mass number')
+plt.xlabel('m/Z')
 plt.ylabel('Time [ns]')
-plt.title('Time of Flight spread vs. Mass Number at different voltages across the cathode MCP gap ')
+#plt.title('Time of propagation range vs. Mass Number at different voltages across the MCP-cathode gap ')
 plt.legend()
+#plt.savefig('Ion_feedback/plots/tof_spread_vs_mass_dif_voltage.png', dpi=500)
 plt.figure(figsize=(16, 8))
 ion_mass_index = 0  # Index of the ion mass you want to plot
 times_for_one_ion = []
